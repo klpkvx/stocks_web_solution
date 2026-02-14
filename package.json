@@ -10,7 +10,7 @@
     "build": "next build",
     "start": "next start",
     "start:infra": "npm run infra:up && next start",
-    "stack:up": "docker compose up -d --build",
+    "stack:up": "bash scripts/stack-up.sh",
     "stack:down": "docker compose down",
     "stack:logs": "docker compose logs -f",
     "lint": "tsc --noEmit",

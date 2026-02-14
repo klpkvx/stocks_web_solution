@@ -15,7 +15,7 @@ if ! command -v apt-get >/dev/null 2>&1; then
 fi
 
 if ! command -v docker >/dev/null 2>&1; then
-  echo "[1/4] Installing Docker engine and compose plugin..."
+  echo "[1/5] Installing Docker engine and compose plugin..."
   apt-get update -y
   apt-get install -y ca-certificates curl gnupg lsb-release
 
@@ -33,10 +33,10 @@ if ! command -v docker >/dev/null 2>&1; then
   apt-get update -y
   apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 else
-  echo "[1/4] Docker is already installed."
+  echo "[1/5] Docker is already installed."
 fi
 
-echo "[2/4] Enabling Docker service..."
+echo "[2/5] Enabling Docker service..."
 if command -v systemctl >/dev/null 2>&1; then
   systemctl enable docker
   systemctl restart docker
@@ -46,11 +46,22 @@ if [[ -n "${SUDO_USER:-}" ]]; then
   usermod -aG docker "${SUDO_USER}" || true
 fi
 
-echo "[3/4] Starting StockPulse stack (app + postgres + redis)..."
-docker compose up -d --build
+if ! docker compose version >/dev/null 2>&1; then
+  echo "Docker compose plugin is missing. Install docker-compose-plugin package."
+  exit 1
+fi
 
-echo "[4/4] Current stack status:"
+echo "[3/5] Preparing .env and secure defaults..."
+bash scripts/stack-up.sh
+
+if [[ -n "${SUDO_USER:-}" && -f .env ]]; then
+  chown "${SUDO_USER}:$(id -gn "${SUDO_USER}")" .env || true
+fi
+
+echo "[4/5] Current stack status:"
 docker compose ps
+
+echo "[5/5] Done."
 
 echo
 echo "Done. StockPulse is running."
