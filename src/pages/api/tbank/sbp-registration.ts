@@ -1,6 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import crypto from "crypto";
+import { methodNotAllowed, sendProblem } from "@/lib/apiProblem";
 import { parseBody } from "@/lib/apiValidation";
+import { withApiObservability } from "@/lib/apiObservability";
 import { tbankSbpRegistrationBodySchema } from "@/contracts/requestContracts";
 
 const DEFAULT_BASE = "https://tacq-tom.tcsbank.ru";
@@ -30,20 +32,23 @@ function buildAuthHeader(date: string) {
   return `${partnerId}:${hmac}`;
 }
 
-export default async function handler(
+async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
   if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
+    return methodNotAllowed(req, res, ["POST"]);
   }
 
   const authDate = new Date().toISOString();
   const authorization = buildAuthHeader(authDate);
 
   if (!authorization) {
-    return res.status(400).json({
-      error: "Missing TBANK_PARTNER_ID or TBANK_SECRET_KEY"
+    return sendProblem(req, res, {
+      type: "https://stockpulse.app/problems/service-unavailable",
+      title: "Service Unavailable",
+      status: 503,
+      detail: "SBP registration is not configured"
     });
   }
 
@@ -97,16 +102,29 @@ export default async function handler(
     const data = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-      return res.status(response.status).json({
-        error: data?.message || "SBP registration failed",
-        details: data
+      return sendProblem(req, res, {
+        type: "https://stockpulse.app/problems/upstream-error",
+        title: "Upstream Service Error",
+        status: response.status >= 500 ? 502 : 400,
+        detail: data?.message || "SBP registration failed"
       });
     }
 
     return res.status(200).json({ success: true, data });
   } catch (error: any) {
-    return res
-      .status(500)
-      .json({ error: error?.message || "SBP registration failed" });
+    return sendProblem(req, res, {
+      type: "https://stockpulse.app/problems/upstream-error",
+      title: "Upstream Service Error",
+      status: 502,
+      detail: error?.message || "SBP registration failed"
+    });
   }
 }
+
+export default withApiObservability("tbank.sbp_registration", handler, {
+  rateLimit: {
+    max: 20,
+    windowMs: 60 * 1000,
+    methods: ["POST"]
+  }
+});

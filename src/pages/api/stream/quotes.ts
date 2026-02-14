@@ -2,6 +2,8 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { dataAccess } from "@/lib/dataAccess/service";
 import { parseQuery } from "@/lib/apiValidation";
 import { streamQuotesQuerySchema } from "@/contracts/requestContracts";
+import { withApiObservability } from "@/lib/apiObservability";
+import { methodNotAllowed } from "@/lib/apiProblem";
 
 export const config = {
   api: {
@@ -21,9 +23,9 @@ function heartbeatMs() {
   return isUsMarketHours() ? 10_000 : 30_000;
 }
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "GET") {
-    return res.status(405).json({ error: "Method not allowed" });
+    return methodNotAllowed(req, res, ["GET"]);
   }
 
   const query = parseQuery(req, res, streamQuotesQuerySchema);
@@ -72,3 +74,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   res.write(`event: ready\ndata: {"ok":true}\n\n`);
   void loop();
 }
+
+export default withApiObservability("stream.quotes", handler, {
+  rateLimit: {
+    max: 90,
+    windowMs: 60 * 1000,
+    methods: ["GET"]
+  },
+  auth: { methods: ["GET"] }
+});

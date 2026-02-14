@@ -23,6 +23,7 @@ export default function CommandBar({
           onChange={(event) => setValue(event.target.value)}
           onKeyDown={(event) => {
             if (event.key === "Enter" && value.trim()) {
+              event.preventDefault();
               onCommand(parseCommand(value));
               setValue("");
             }

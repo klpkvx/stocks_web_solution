@@ -1,6 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { parseBody } from "@/lib/apiValidation";
 import { webVitalsBodySchema } from "@/contracts/requestContracts";
+import { withApiObservability } from "@/lib/apiObservability";
+import { methodNotAllowed } from "@/lib/apiProblem";
 
 const METRICS: Array<{
   id: string;
@@ -13,7 +15,7 @@ const METRICS: Array<{
 
 const MAX_METRICS = 500;
 
-export default async function handler(
+async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
@@ -51,5 +53,14 @@ export default async function handler(
     return res.status(200).json({ summary, count: METRICS.length });
   }
 
-  return res.status(405).json({ error: "Method not allowed" });
+  return methodNotAllowed(req, res, ["GET", "POST"]);
 }
+
+export default withApiObservability("web_vitals", handler, {
+  rateLimit: {
+    max: 300,
+    windowMs: 60 * 1000,
+    methods: ["GET", "POST"]
+  },
+  auth: { methods: ["GET", "POST"] }
+});

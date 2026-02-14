@@ -11,7 +11,9 @@
     "lint": "next lint",
     "perf:budget": "node scripts/check-performance-budget.mjs",
     "perf:api": "node scripts/check-api-budget.mjs",
-    "ci:perf": "npm run build && npm run perf:budget"
+    "ci:perf": "npm run build && npm run perf:budget",
+    "load:api": "k6 run scripts/k6-api-load.js",
+    "load:api:smoke": "k6 run -e VUS=10 -e DURATION=30s scripts/k6-api-load.js"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.90.21",

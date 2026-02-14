@@ -5,6 +5,7 @@ const FALSE_VALUES = new Set(["0", "false", "no", "off"]);
 const SYMBOL_REGEX = /^[A-Za-z][A-Za-z0-9._-]{0,15}$/;
 const INTERVAL_REGEX = /^[0-9]+(min|h|day|week|month)$/i;
 const DATE_REGEX = /^\d{4}-\d{2}-\d{2}(?:[Tt ].*)?$/;
+const LOGIN_REGEX = /^[A-Za-z0-9._-]{3,40}$/;
 
 function firstValue(value: unknown): unknown {
   if (Array.isArray(value)) {
@@ -111,6 +112,16 @@ const optionalTrimmedString = (maxLength = 200) =>
 
 const requiredTrimmedString = (maxLength = 200) =>
   z.string().trim().min(1).max(maxLength);
+
+const loginBodyValueSchema = z
+  .string()
+  .trim()
+  .min(3)
+  .max(40)
+  .regex(LOGIN_REGEX, "Invalid login format")
+  .transform((value) => value.toLowerCase());
+
+const passwordBodyValueSchema = z.string().min(8).max(128);
 
 export const backtestQuerySchema = z
   .object({
@@ -225,6 +236,15 @@ export const webVitalsBodySchema = z.object({
   }, z.number().finite()),
   rating: optionalTrimmedString(32),
   navigationType: optionalTrimmedString(64)
+});
+
+export const authLoginBodySchema = z.object({
+  login: loginBodyValueSchema,
+  password: passwordBodyValueSchema
+});
+
+export const authRegisterBodySchema = authLoginBodySchema.extend({
+  name: optionalTrimmedString(120)
 });
 
 export const emptyQuerySchema = z.object({}).strict();

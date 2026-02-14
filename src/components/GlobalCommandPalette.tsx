@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/router";
 import { parseCommand } from "@/lib/nlp";
 import { useFeatureFlags } from "@/lib/useFeatureFlags";
+import { navigateToTicker } from "@/lib/stockNavigation";
 
 type QuickCommand = {
   id: string;
@@ -45,7 +46,7 @@ export default function GlobalCommandPalette() {
   function runParsedCommand(input: string) {
     const action = parseCommand(input);
     if (action.type === "open" && action.symbols[0]) {
-      void router.push(`/stock/${encodeURIComponent(action.symbols[0])}`);
+      void navigateToTicker(router, action.symbols[0]);
       return;
     }
     if (action.type === "compare") {
@@ -68,7 +69,7 @@ export default function GlobalCommandPalette() {
       return;
     }
     if (action.type === "search" && action.query) {
-      void router.push(`/stock?query=${encodeURIComponent(action.query)}`);
+      void navigateToTicker(router, action.query);
     }
   }
 
@@ -96,6 +97,7 @@ export default function GlobalCommandPalette() {
               className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-ink outline-none focus:border-glow/50"
               onKeyDown={(event) => {
                 if (event.key === "Enter" && value.trim()) {
+                  event.preventDefault();
                   runParsedCommand(value.trim());
                   setValue("");
                   setOpen(false);

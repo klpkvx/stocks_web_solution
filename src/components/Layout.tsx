@@ -17,6 +17,7 @@ import OfflineStatusBar from "@/components/OfflineStatusBar";
 import GlobalCommandPalette from "@/components/GlobalCommandPalette";
 import { IconClose, IconMenu } from "@/components/Icons";
 import { useI18n } from "@/components/I18nProvider";
+import { useAuthSession } from "@/hooks/useAuthSession";
 
 const NAV_ITEMS = [
   { href: "/", labelKey: "nav.dashboard" },
@@ -32,6 +33,7 @@ const NAV_ITEMS = [
 export default function Layout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const { t } = useI18n();
+  const { authenticated, user, loading: authLoading, logout } = useAuthSession();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const menuToggleLabel = mobileMenuOpen
     ? t("layout.closeMenu")
@@ -46,6 +48,16 @@ export default function Layout({ children }: { children: ReactNode }) {
     if (router.pathname.startsWith("/stock/")) return "/stock";
     return router.pathname;
   }, [router.pathname]);
+
+  async function handleLogout() {
+    try {
+      await logout();
+    } catch {
+      // Keep the user on the current page if logout fails.
+      return;
+    }
+    void router.push("/");
+  }
 
   return (
     <div className="relative isolate min-h-screen bg-night text-ink">
@@ -73,7 +85,42 @@ export default function Layout({ children }: { children: ReactNode }) {
               </div>
 
               <div className="hidden items-center gap-3 lg:flex">
-                <TickerQuickSearch compact />
+                {authenticated && <TickerQuickSearch compact />}
+                {authLoading ? (
+                  <span className="rounded-full border border-white/10 px-3 py-1 text-xs text-muted">
+                    {t("auth.loading", "Auth...")}
+                  </span>
+                ) : authenticated && user ? (
+                  <>
+                    <span className="rounded-full border border-white/10 px-3 py-1 text-xs text-muted">
+                      {user.login}
+                    </span>
+                    <button
+                      type="button"
+                      className="rounded-full border border-white/10 px-3 py-1 text-xs text-muted transition hover:border-white/30 hover:text-ink"
+                      onClick={() => {
+                        void handleLogout();
+                      }}
+                    >
+                      {t("auth.logout", "Logout")}
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Link
+                      href="/login"
+                      className="rounded-full border border-white/10 px-3 py-1 text-xs text-muted transition hover:border-white/30 hover:text-ink"
+                    >
+                      {t("auth.login", "Login")}
+                    </Link>
+                    <Link
+                      href="/register"
+                      className="rounded-full border border-white/10 px-3 py-1 text-xs text-muted transition hover:border-white/30 hover:text-ink"
+                    >
+                      {t("auth.register", "Register")}
+                    </Link>
+                  </>
+                )}
                 <LanguageToggle />
                 <ThemeToggle />
                 <PerformanceToggle />
@@ -125,8 +172,43 @@ export default function Layout({ children }: { children: ReactNode }) {
                 id="mobile-nav-panel"
                 className="mt-4 space-y-3 rounded-2xl border border-white/10 bg-night/95 p-4 lg:hidden"
               >
-                <TickerQuickSearch compact={false} />
+                {authenticated && <TickerQuickSearch compact={false} />}
                 <div className="flex flex-wrap items-center gap-2">
+                  {authLoading ? (
+                    <span className="rounded-full border border-white/10 px-3 py-1 text-xs text-muted">
+                      {t("auth.loading", "Auth...")}
+                    </span>
+                  ) : authenticated && user ? (
+                    <>
+                      <span className="rounded-full border border-white/10 px-3 py-1 text-xs text-muted">
+                        {user.login}
+                      </span>
+                      <button
+                        type="button"
+                        className="rounded-full border border-white/10 px-3 py-1 text-xs text-muted transition hover:border-white/30 hover:text-ink"
+                        onClick={() => {
+                          void handleLogout();
+                        }}
+                      >
+                        {t("auth.logout", "Logout")}
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <Link
+                        href="/login"
+                        className="rounded-full border border-white/10 px-3 py-1 text-xs text-muted transition hover:border-white/30 hover:text-ink"
+                      >
+                        {t("auth.login", "Login")}
+                      </Link>
+                      <Link
+                        href="/register"
+                        className="rounded-full border border-white/10 px-3 py-1 text-xs text-muted transition hover:border-white/30 hover:text-ink"
+                      >
+                        {t("auth.register", "Register")}
+                      </Link>
+                    </>
+                  )}
                   <LanguageToggle />
                   <ThemeToggle />
                   <PerformanceToggle />

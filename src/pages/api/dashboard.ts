@@ -14,6 +14,11 @@ type DashboardPayload = {
   updatedAt: string;
 };
 
+function canWrite(res: NextApiResponse) {
+  const socket = (res as any).socket;
+  return !res.headersSent && !res.writableEnded && !res.destroyed && !socket?.destroyed;
+}
+
 async function handler(
   req: NextApiRequest,
   res: NextApiResponse
@@ -77,8 +82,10 @@ async function handler(
       "Cache-Control",
       `s-maxage=${payload.expiresIn}, stale-while-revalidate=${payload.expiresIn}`
     );
+    if (!canWrite(res)) return;
     return res.status(200).json(payload);
   } catch (error: any) {
+    if (!canWrite(res)) return;
     return res.status(200).json({
       quotes: [],
       news: null,

@@ -11,9 +11,15 @@ export async function fetchJson<T>(
     const response = await fetch(url, { signal: controller.signal });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) {
+      const validationMessage = Array.isArray(payload?.errors)
+        ? payload.errors[0]?.message
+        : null;
       const message =
+        payload?.detail ||
         payload?.error ||
         payload?.message ||
+        validationMessage ||
+        payload?.title ||
         `Request failed (${response.status})`;
       throw new Error(message);
     }

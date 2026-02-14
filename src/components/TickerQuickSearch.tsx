@@ -1,6 +1,7 @@
 import { useRouter } from "next/router";
 import { useI18n } from "@/components/I18nProvider";
 import TickerSearchInput from "@/components/TickerSearchInput";
+import { navigateToTicker } from "@/lib/stockNavigation";
 
 export default function TickerQuickSearch({
   className = "",
@@ -19,7 +20,9 @@ export default function TickerQuickSearch({
         placeholder={t("search.ticker")}
         buttonLabel={t("search.go")}
         inputAriaLabel={t("layout.searchTicker")}
-        onSubmit={(ticker) => router.push(`/stock/${ticker}`)}
+        onSubmit={(ticker) => {
+          void navigateToTicker(router, ticker);
+        }}
       />
     </div>
   );

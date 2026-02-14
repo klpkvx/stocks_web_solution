@@ -34,6 +34,8 @@ import type { HeatmapPeriod } from "@/types/heatmap";
 import type { DashboardPayload } from "@/types/dashboard";
 import { useFeatureFlags } from "@/lib/useFeatureFlags";
 import { useQuoteStream } from "@/lib/useQuoteStream";
+import { navigateToTicker } from "@/lib/stockNavigation";
+import { useAuthSession } from "@/hooks/useAuthSession";
 import {
   DEFAULT_INVENTORY,
   InventoryAlert,
@@ -187,6 +189,13 @@ type ModuleConfig = {
   enabled: boolean;
 };
 
+function sanitizeNextPath(input: unknown) {
+  const value = typeof input === "string" ? input : "";
+  if (!value.startsWith("/")) return "/";
+  if (value.startsWith("//")) return "/";
+  return value;
+}
+
 const WatchlistWidget = dynamic(
   () => import("@/components/widgets/WatchlistWidget"),
   {
@@ -222,6 +231,7 @@ export default function HomePage() {
   const { t, locale } = useI18n();
   useI18nNamespace("home");
   const { theme } = useTheme();
+  const { authenticated, loading: authLoading } = useAuthSession();
   const [watchlist, setWatchlist] = useStoredState<string[]>(
     "watchlist",
     DEFAULT_WATCHLIST
@@ -376,12 +386,13 @@ export default function HomePage() {
   );
 
   const activeModules = modules.filter((module) => module.enabled);
-  const newsEnabled = modules.some(
+  const newsEnabled = authenticated && modules.some(
     (module) => module.id === "news" && module.enabled
   );
-  const heatmapEnabled = modules.some(
+  const heatmapModuleEnabled = modules.some(
     (module) => module.id === "heatmap" && module.enabled
   );
+  const heatmapDataEnabled = authenticated && heatmapModuleEnabled;
 
   const moduleLabel = (id: string, fallback: string) =>
     t(`home.module.${id}`, fallback);
@@ -393,24 +404,24 @@ export default function HomePage() {
   const dashboardQuery = useDashboardQuery({
     symbols,
     newsEnabled,
-    heatmapEnabled,
+    heatmapEnabled: heatmapDataEnabled,
     newsSymbol,
-    enabled: isVisible,
+    enabled: authenticated && isVisible,
     refetchIntervalMs: DASHBOARD_POLL_MS
   });
   const dashboardData = dashboardQuery.data as DashboardPayload | undefined;
   const dashboardWarnings = dashboardData?.warnings || [];
   const quotes = dashboardData?.quotes || [];
-  const quoteStream = useQuoteStream(symbols, isVisible);
+  const quoteStream = useQuoteStream(symbols, authenticated && isVisible);
   const news = newsEnabled ? dashboardData?.news || null : null;
-  const heatmap = heatmapEnabled ? dashboardData?.heatmap || null : null;
+  const heatmap = dashboardData?.heatmap || null;
   const loading = dashboardQuery.isLoading;
   const newsLoading =
     newsEnabled && dashboardQuery.isLoading && !dashboardData?.news;
   const heatmapLoading =
-    heatmapEnabled && dashboardQuery.isLoading && !dashboardData?.heatmap;
+    heatmapDataEnabled && dashboardQuery.isLoading && !dashboardData?.heatmap;
   const heatmapError =
-    heatmapEnabled && !dashboardQuery.isLoading && !heatmap
+    heatmapDataEnabled && !dashboardQuery.isLoading && !heatmap
       ? t("home.heatmap.errorLoad")
       : null;
   const error =
@@ -613,7 +624,7 @@ export default function HomePage() {
       });
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.error || t("home.sbp.errorRegister"));
+        throw new Error(data.detail || data.error || t("home.sbp.errorRegister"));
       }
       setSbpStatus("success");
       pushToast(t("home.sbp.submittedToast"), "success");
@@ -631,29 +642,30 @@ export default function HomePage() {
 
   function handleCommand(action: ReturnType<typeof parseCommand>) {
     if (action.type === "open" && action.symbols[0]) {
-      router.push(`/stock/${action.symbols[0]}`);
+      void navigateToTicker(router, action.symbols[0]);
       return;
     }
     if (action.type === "compare" && action.symbols.length >= 2) {
-      router.push(`/compare?symbols=${action.symbols.join(",")}`);
+      const symbols = encodeURIComponent(action.symbols.join(","));
+      void router.push(`/compare?symbols=${symbols}`);
       return;
     }
     if (action.type === "news") {
       const symbol = action.symbols[0];
-      router.push(symbol ? `/news?symbol=${symbol}` : "/news");
+      void router.push(symbol ? `/news?symbol=${encodeURIComponent(symbol)}` : "/news");
       return;
     }
     if (action.type === "strategy") {
       const symbol = action.symbols[0];
-      router.push(symbol ? `/strategy?symbol=${symbol}` : "/strategy");
+      void router.push(symbol ? `/strategy?symbol=${encodeURIComponent(symbol)}` : "/strategy");
       return;
     }
     if (action.type === "alerts") {
-      router.push("/alerts");
+      void router.push("/alerts");
       return;
     }
     if (action.type === "search") {
-      router.push(`/stock/${action.query}`);
+      void navigateToTicker(router, action.query);
     }
   }
 
@@ -734,6 +746,113 @@ export default function HomePage() {
     [t]
   );
 
+  const nextPath = useMemo(
+    () => sanitizeNextPath(router.query.next),
+    [router.query.next]
+  );
+
+  const loginHref =
+    nextPath !== "/" ? `/login?next=${encodeURIComponent(nextPath)}` : "/login";
+  const registerHref =
+    nextPath !== "/"
+      ? `/register?next=${encodeURIComponent(nextPath)}`
+      : "/register";
+
+  if (authLoading) {
+    return (
+      <Layout>
+        <section className="mx-auto max-w-2xl">
+          <ModuleCard
+            title={t("auth.loadingTitle", "Preparing workspace")}
+            subtitle={t("auth.loadingSubtitle", "Checking your session")}
+          >
+            <div className="space-y-3">
+              <LoadingDots label={t("auth.loading", "Auth...")} />
+              <LoadingSkeleton className="h-16 w-full rounded-2xl" />
+              <LoadingSkeleton className="h-16 w-full rounded-2xl" />
+            </div>
+          </ModuleCard>
+        </section>
+      </Layout>
+    );
+  }
+
+  if (!authenticated) {
+    return (
+      <Layout>
+        <section className="grid gap-8 lg:grid-cols-[1.1fr,0.9fr]">
+          <div className="glass rounded-3xl px-8 py-10">
+            <p className="text-xs uppercase tracking-[0.35em] text-muted">
+              {t("auth.landing.kicker", "Private Workspace")}
+            </p>
+            <h2 className="mt-4 font-serif text-4xl text-ink sm:text-5xl">
+              {t("auth.landing.title", "Login to open live market data")}
+            </h2>
+            <p className="mt-4 max-w-xl text-sm text-muted">
+              {t(
+                "auth.landing.body",
+                "Guest mode keeps this page read-only with preview widgets. Sign in to unlock real-time data and API-powered modules."
+              )}
+            </p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Link
+                href={loginHref}
+                className="rounded-full bg-gradient-to-r from-glow to-lavender px-5 py-2 text-sm font-semibold text-night transition hover:opacity-90"
+              >
+                {t("auth.login", "Login")}
+              </Link>
+              <Link
+                href={registerHref}
+                className="rounded-full border border-white/10 px-5 py-2 text-sm text-muted transition hover:border-white/30 hover:text-ink"
+              >
+                {t("auth.register", "Register")}
+              </Link>
+            </div>
+            <p className="mt-4 text-xs text-muted">
+              {t(
+                "auth.landing.note",
+                "Preview mode: no market API requests, no portfolio data, no alerts."
+              )}
+            </p>
+          </div>
+
+          <ModuleCard
+            title={t("auth.landing.previewTitle", "Read-only preview")}
+            subtitle={t(
+              "auth.landing.previewSubtitle",
+              "Static sample components shown before authentication"
+            )}
+          >
+            <div className="space-y-3">
+              {[
+                { symbol: "AAPL", move: "+1.42%" },
+                { symbol: "MSFT", move: "+0.58%" },
+                { symbol: "TSLA", move: "-0.91%" }
+              ].map((item) => (
+                <div
+                  key={`guest-preview-${item.symbol}`}
+                  className="flex items-center justify-between rounded-2xl border border-white/10 px-4 py-3"
+                >
+                  <div className="flex items-center gap-3">
+                    <StockIcon symbol={item.symbol} size="sm" />
+                    <p className="text-sm font-semibold text-ink">{item.symbol}</p>
+                  </div>
+                  <p
+                    className={`text-sm font-semibold ${
+                      item.move.startsWith("-") ? "text-ember" : "text-neon"
+                    }`}
+                  >
+                    {item.move}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </ModuleCard>
+        </section>
+      </Layout>
+    );
+  }
+
   return (
     <Layout>
       <section className="grid gap-8 lg:grid-cols-[1.1fr,0.9fr]">
@@ -753,14 +872,18 @@ export default function HomePage() {
             <div className="mt-6">
               <SearchBar
                 placeholder={t("home.searchPlaceholder")}
-                onSubmit={(value) => router.push(`/stock/${value}`)}
+                onSubmit={(value) => {
+                  void navigateToTicker(router, value);
+                }}
               />
             </div>
             <div className="mt-5 flex flex-wrap items-center gap-3">
               <button
                 type="button"
                 className="rounded-full bg-gradient-to-r from-glow to-lavender px-5 py-2 text-sm font-semibold text-night"
-                onClick={() => router.push(`/stock/${watchlist[0] || "AAPL"}`)}
+                onClick={() => {
+                  void navigateToTicker(router, watchlist[0] || "AAPL");
+                }}
               >
                 {t("home.cta.start")}
               </button>
@@ -1071,7 +1194,9 @@ export default function HomePage() {
                       onPeriodChange={setHeatmapPeriod}
                       loading={heatmapLoading}
                       error={heatmapError}
-                      onOpenTicker={(symbol) => router.push(`/stock/${symbol}`)}
+                      onOpenTicker={(symbol) => {
+                        void navigateToTicker(router, symbol);
+                      }}
                     />
                   </LazyViewport>
                 </ModuleCard>
@@ -1222,9 +1347,9 @@ export default function HomePage() {
                   actions={
                     <button
                       className="rounded-full border border-white/10 px-3 py-1 text-xs text-muted"
-                      onClick={() =>
-                        router.push(`/stock/${watchlist[0] || "AAPL"}`)
-                      }
+                      onClick={() => {
+                        void navigateToTicker(router, watchlist[0] || "AAPL");
+                      }}
                     >
                       {t("common.explore")}
                     </button>

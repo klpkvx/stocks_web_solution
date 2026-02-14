@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import type { z } from "zod";
+import { sendProblem } from "@/lib/apiProblem";
 
 function normalizeValue(value: unknown): unknown {
   if (Array.isArray(value)) {
@@ -27,13 +28,17 @@ function formatIssues(error: z.ZodError) {
 }
 
 function sendValidationError(
+  req: NextApiRequest,
   res: NextApiResponse,
   label: string,
   error: z.ZodError
 ): null {
-  res.status(400).json({
-    error: `Invalid ${label}`,
-    issues: formatIssues(error)
+  sendProblem(req, res, {
+    type: "https://stockpulse.app/problems/validation-error",
+    title: "Validation Error",
+    status: 400,
+    detail: `Invalid ${label}`,
+    errors: formatIssues(error)
   });
   return null;
 }
@@ -46,7 +51,7 @@ export function parseQuery<T extends z.ZodTypeAny>(
   const payload = normalizeObject(req.query);
   const result = schema.safeParse(payload);
   if (!result.success) {
-    return sendValidationError(res, "query parameters", result.error);
+    return sendValidationError(req, res, "query parameters", result.error);
   }
   return result.data;
 }
@@ -61,7 +66,13 @@ export function parseBody<T extends z.ZodTypeAny>(
     try {
       body = JSON.parse(body);
     } catch {
-      res.status(400).json({ error: "Invalid request body", issues: [{ path: "root", message: "Body must be valid JSON" }] });
+      sendProblem(req, res, {
+        type: "https://stockpulse.app/problems/validation-error",
+        title: "Validation Error",
+        status: 400,
+        detail: "Invalid request body",
+        errors: [{ path: "root", message: "Body must be valid JSON" }]
+      });
       return null;
     }
   }
@@ -69,7 +80,7 @@ export function parseBody<T extends z.ZodTypeAny>(
   const payload = normalizeObject(body);
   const result = schema.safeParse(payload);
   if (!result.success) {
-    return sendValidationError(res, "request body", result.error);
+    return sendValidationError(req, res, "request body", result.error);
   }
   return result.data;
 }

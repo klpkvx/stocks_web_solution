@@ -32,9 +32,15 @@ function isFresh(entry?: UserCacheEntry) {
 async function parseJson<T>(response: Response): Promise<T> {
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
+    const validationMessage = Array.isArray(payload?.errors)
+      ? payload.errors[0]?.message
+      : null;
     const message =
+      payload?.detail ||
       payload?.error ||
       payload?.message ||
+      validationMessage ||
+      payload?.title ||
       `Request failed (${response.status})`;
     throw new Error(message);
   }
@@ -106,4 +112,3 @@ export const useUserStore = create<UserStoreState>((set, get) => ({
     set({ cache: {} });
   }
 }));
-
