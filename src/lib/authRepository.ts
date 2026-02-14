@@ -4,10 +4,15 @@ import {
   randomUUID,
   timingSafeEqual
 } from "crypto";
+import { ensureAuthSchema, isPostgresConfigured, pgQuery, withPgClient } from "@/lib/persistence/postgres";
+import { withSpan } from "@/lib/observability/tracing";
+
+export type AuthRole = "user" | "admin";
 
 type AuthAccountRecord = {
   id: string;
   login: string;
+  role: AuthRole;
   passwordHash: string;
   passwordSalt: string;
   passwordIterations: number;
@@ -15,9 +20,21 @@ type AuthAccountRecord = {
   updatedAt: string;
 };
 
+type AuthAccountRow = {
+  id: string;
+  login: string;
+  role: string;
+  password_hash: string;
+  password_salt: string;
+  password_iterations: number;
+  created_at: string | Date;
+  updated_at: string | Date;
+};
+
 export type AuthAccount = {
   id: string;
   login: string;
+  role: AuthRole;
   createdAt: string;
   updatedAt: string;
 };
@@ -25,16 +42,8 @@ export type AuthAccount = {
 const PASSWORD_ITERATIONS = 120_000;
 const HASH_LENGTH = 32;
 const HASH_ALGO = "sha256";
-
-const globalAuthByLogin =
-  (globalThis as any).__STOCK_PULSE_AUTH_BY_LOGIN__ ||
-  new Map<string, AuthAccountRecord>();
-const globalAuthById =
-  (globalThis as any).__STOCK_PULSE_AUTH_BY_ID__ ||
-  new Map<string, AuthAccountRecord>();
-
-(globalThis as any).__STOCK_PULSE_AUTH_BY_LOGIN__ = globalAuthByLogin;
-(globalThis as any).__STOCK_PULSE_AUTH_BY_ID__ = globalAuthById;
+const DUMMY_PASSWORD_SALT = "stockpulse_dummy_password_salt";
+const AUTH_ROLE_LOCK_KEY = 965_331;
 
 function nowIso() {
   return new Date().toISOString();
@@ -65,12 +74,30 @@ function secureCompareHex(left: string, right: string) {
   return timingSafeEqual(leftBytes, rightBytes);
 }
 
+function normalizeRole(value: unknown): AuthRole {
+  return value === "admin" ? "admin" : "user";
+}
+
 function toPublic(account: AuthAccountRecord): AuthAccount {
   return {
     id: account.id,
     login: account.login,
+    role: normalizeRole(account.role),
     createdAt: account.createdAt,
     updatedAt: account.updatedAt
+  };
+}
+
+function fromRow(row: AuthAccountRow): AuthAccountRecord {
+  return {
+    id: String(row.id),
+    login: normalizeLogin(row.login),
+    role: normalizeRole(row.role),
+    passwordHash: String(row.password_hash),
+    passwordSalt: String(row.password_salt),
+    passwordIterations: Number(row.password_iterations),
+    createdAt: new Date(row.created_at).toISOString(),
+    updatedAt: new Date(row.updated_at).toISOString()
   };
 }
 
@@ -83,53 +110,170 @@ function verifyPassword(account: AuthAccountRecord, password: string) {
   return secureCompareHex(account.passwordHash, expected);
 }
 
-export function createAuthAccount(input: {
+async function requirePostgresAuthStore() {
+  if (!isPostgresConfigured()) {
+    throw new Error("AUTH_DATABASE_URL must be configured");
+  }
+  await ensureAuthSchema();
+}
+
+export async function createAuthAccount(input: {
   login: string;
   password: string;
-}): AuthAccount | null {
-  const login = normalizeLogin(input.login);
-  if (!login) return null;
-  if (globalAuthByLogin.has(login)) return null;
+}): Promise<AuthAccount | null> {
+  return withSpan("auth_repository.create", {}, async () => {
+    await requirePostgresAuthStore();
+    const login = normalizeLogin(input.login);
+    if (!login) return null;
 
-  const salt = randomBytes(16).toString("hex");
-  const now = nowIso();
-  const next: AuthAccountRecord = {
-    id: buildId(),
-    login,
-    passwordHash: hashPassword(input.password, salt, PASSWORD_ITERATIONS),
-    passwordSalt: salt,
-    passwordIterations: PASSWORD_ITERATIONS,
-    createdAt: now,
-    updatedAt: now
-  };
+    const salt = randomBytes(16).toString("hex");
+    const now = nowIso();
+    const passwordHash = hashPassword(input.password, salt, PASSWORD_ITERATIONS);
+    const id = buildId();
 
-  globalAuthByLogin.set(login, next);
-  globalAuthById.set(next.id, next);
-  return toPublic(next);
+    return withPgClient(async (client) => {
+      await client.query("BEGIN");
+      try {
+        await client.query("SELECT pg_advisory_xact_lock($1)", [AUTH_ROLE_LOCK_KEY]);
+        const existing = await client.query<{ id: string }>(
+          "SELECT id FROM auth_accounts WHERE login = $1 LIMIT 1",
+          [login]
+        );
+        if ((existing.rowCount || 0) > 0) {
+          await client.query("ROLLBACK");
+          return null;
+        }
+
+        const adminCount = await client.query<{ count: number }>(
+          "SELECT COUNT(*)::int AS count FROM auth_accounts WHERE role = 'admin'"
+        );
+        const isFirstAdmin = Number(adminCount.rows[0]?.count || 0) === 0;
+        const role: AuthRole = isFirstAdmin ? "admin" : "user";
+
+        const inserted = await client.query<AuthAccountRow>(
+          `
+            INSERT INTO auth_accounts (
+              id,
+              login,
+              role,
+              password_hash,
+              password_salt,
+              password_iterations,
+              created_at,
+              updated_at
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            RETURNING
+              id,
+              login,
+              role,
+              password_hash,
+              password_salt,
+              password_iterations,
+              created_at,
+              updated_at
+          `,
+          [
+            id,
+            login,
+            role,
+            passwordHash,
+            salt,
+            PASSWORD_ITERATIONS,
+            now,
+            now
+          ]
+        );
+        await client.query("COMMIT");
+
+        const row = inserted.rows[0];
+        if (!row) return null;
+        return toPublic(fromRow(row));
+      } catch (error) {
+        await client.query("ROLLBACK");
+        throw error;
+      }
+    });
+  });
 }
 
-export function authenticateAuthAccount(input: {
+export async function authenticateAuthAccount(input: {
   login: string;
   password: string;
-}): AuthAccount | null {
-  const login = normalizeLogin(input.login);
-  if (!login) return null;
+}): Promise<AuthAccount | null> {
+  return withSpan("auth_repository.authenticate", {}, async () => {
+    await requirePostgresAuthStore();
+    const login = normalizeLogin(input.login);
+    if (!login) return null;
 
-  const account = globalAuthByLogin.get(login);
-  if (!account) return null;
-  if (!verifyPassword(account, input.password)) return null;
+    const accountResult = await pgQuery<AuthAccountRow>(
+      `
+        SELECT
+          id,
+          login,
+          role,
+          password_hash,
+          password_salt,
+          password_iterations,
+          created_at,
+          updated_at
+        FROM auth_accounts
+        WHERE login = $1
+        LIMIT 1
+      `,
+      [login]
+    );
 
-  const updated: AuthAccountRecord = {
-    ...account,
-    updatedAt: nowIso()
-  };
-  globalAuthByLogin.set(login, updated);
-  globalAuthById.set(updated.id, updated);
-  return toPublic(updated);
+    const row = accountResult.rows[0];
+    if (!row) {
+      hashPassword(input.password, DUMMY_PASSWORD_SALT, PASSWORD_ITERATIONS);
+      return null;
+    }
+
+    const account = fromRow(row);
+    if (!verifyPassword(account, input.password)) {
+      return null;
+    }
+
+    const updatedAt = nowIso();
+    await pgQuery(
+      "UPDATE auth_accounts SET updated_at = $2 WHERE id = $1",
+      [account.id, updatedAt]
+    );
+
+    return toPublic({
+      ...account,
+      updatedAt
+    });
+  });
 }
 
-export function getAuthAccountById(id: string): AuthAccount | null {
-  const account = globalAuthById.get(String(id || "").trim());
-  if (!account) return null;
-  return toPublic(account);
+export async function getAuthAccountById(id: string): Promise<AuthAccount | null> {
+  return withSpan("auth_repository.get_by_id", {}, async () => {
+    await requirePostgresAuthStore();
+    const key = String(id || "").trim();
+    if (!key) return null;
+
+    const result = await pgQuery<AuthAccountRow>(
+      `
+        SELECT
+          id,
+          login,
+          role,
+          password_hash,
+          password_salt,
+          password_iterations,
+          created_at,
+          updated_at
+        FROM auth_accounts
+        WHERE id = $1
+        LIMIT 1
+      `,
+      [key]
+    );
+    const row = result.rows[0];
+    if (!row) return null;
+    return toPublic(fromRow(row));
+  });
 }
+

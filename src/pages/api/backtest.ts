@@ -4,6 +4,7 @@ import { withApiObservability } from "@/lib/apiObservability";
 import { dataAccess } from "@/lib/dataAccess/service";
 import { parseQuery } from "@/lib/apiValidation";
 import { backtestQuerySchema } from "@/contracts/requestContracts";
+import { errorMessage } from "@/lib/errorMessage";
 
 const BACKTEST_REFRESH_MS = 10 * 60 * 1000;
 const BACKTEST_STALE_MS = 2 * 60 * 60 * 1000;
@@ -38,10 +39,6 @@ async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  if (req.method !== "GET") {
-    return res.status(405).json({ error: "Method not allowed" });
-  }
-
   const query = parseQuery(req, res, backtestQuerySchema);
   if (!query) return;
   const symbol = query.symbol;
@@ -118,11 +115,13 @@ async function handler(
       `s-maxage=${BACKTEST_EXPIRES_IN}, stale-while-revalidate=${BACKTEST_EXPIRES_IN}`
     );
     return res.status(200).json(payload);
-  } catch (error: any) {
+  } catch (error: unknown) {
     return res
       .status(500)
-      .json({ error: error?.message || "Failed to backtest" });
+      .json({ error: errorMessage(error, "Failed to backtest") });
   }
 }
 
-export default withApiObservability("backtest", handler);
+export default withApiObservability("backtest", handler, {
+  methods: ["GET"]
+});

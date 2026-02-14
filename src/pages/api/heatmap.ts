@@ -3,15 +3,12 @@ import { dataAccess } from "@/lib/dataAccess/service";
 import { withApiObservability } from "@/lib/apiObservability";
 import { parseQuery } from "@/lib/apiValidation";
 import { heatmapQuerySchema } from "@/contracts/requestContracts";
+import { errorMessage } from "@/lib/errorMessage";
 
 async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  if (req.method !== "GET") {
-    return res.status(405).json({ error: "Method not allowed" });
-  }
-
   const query = parseQuery(req, res, heatmapQuerySchema);
   if (!query) return;
   const forceRefresh = query.refresh;
@@ -23,11 +20,13 @@ async function handler(
       `s-maxage=${payload.expiresIn}, stale-while-revalidate=${payload.expiresIn}`
     );
     return res.status(200).json(payload);
-  } catch (error: any) {
+  } catch (error: unknown) {
     return res.status(500).json({
-      error: error?.message || "Failed to build heatmap"
+      error: errorMessage(error, "Failed to build heatmap")
     });
   }
 }
 
-export default withApiObservability("heatmap", handler);
+export default withApiObservability("heatmap", handler, {
+  methods: ["GET"]
+});

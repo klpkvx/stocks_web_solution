@@ -9,15 +9,7 @@ import ModuleCard from "@/components/ModuleCard";
 import HeroSlider from "@/components/HeroSlider";
 import LazyViewport from "@/components/LazyViewport";
 import { LoadingDots, LoadingSkeleton } from "@/components/LoadingSkeleton";
-import {
-  IconBell,
-  IconChart,
-  IconPulse,
-  IconRadar,
-  IconSBP,
-  IconSpark,
-  IconStack
-} from "@/components/Icons";
+import { IconSBP } from "@/components/Icons";
 import StockIcon from "@/components/StockIcon";
 import { formatCurrency, formatPercent } from "@/lib/format";
 import { useStoredState } from "@/lib/useStoredState";
@@ -36,6 +28,21 @@ import { useFeatureFlags } from "@/lib/useFeatureFlags";
 import { useQuoteStream } from "@/lib/useQuoteStream";
 import { navigateToTicker } from "@/lib/stockNavigation";
 import { useAuthSession } from "@/hooks/useAuthSession";
+import { sanitizeRelativePath } from "@/lib/safePath";
+import { errorMessage } from "@/lib/errorMessage";
+import {
+  DASHBOARD_POLL_MS,
+  DEFAULT_WATCHLIST,
+  FEATURE_CARDS,
+  MODULES,
+  PARTNER_KEYS,
+  ROLE_PRESETS,
+  SLIDE_KEYS,
+  TESTIMONIALS,
+  TRUST_BADGES,
+  WORKSPACE_PRESET_KEY_PREFIX,
+  type ModuleConfig
+} from "@/features/home/config";
 import {
   DEFAULT_INVENTORY,
   InventoryAlert,
@@ -46,155 +53,6 @@ import {
   countThresholdAdjustments,
   pendingAlerts
 } from "@/lib/inventory";
-
-const DEFAULT_WATCHLIST = ["AAPL", "MSFT", "GOOGL"];
-const DASHBOARD_POLL_MS = 60 * 1000;
-const WORKSPACE_PRESET_KEY_PREFIX = "workspace-preset:v1:";
-
-const MODULES = [
-  { id: "brief", label: "Morning Brief" },
-  { id: "watchlist", label: "Watchlist" },
-  { id: "heatmap", label: "Heatmap" },
-  { id: "portfolio", label: "Portfolio" },
-  { id: "alerts", label: "Alerts" },
-  { id: "inventory", label: "Smart Stock Alerts" },
-  { id: "license", label: "License Payment" },
-  { id: "news", label: "News" },
-  { id: "insights", label: "AI Insights" },
-  { id: "strategy", label: "Strategy Lab" }
-];
-
-const ROLE_PRESETS: Record<"beginner" | "trader" | "research", string[]> = {
-  beginner: ["brief", "watchlist", "news", "portfolio", "alerts"],
-  trader: ["watchlist", "heatmap", "alerts", "strategy", "news", "insights"],
-  research: ["brief", "news", "heatmap", "insights", "strategy", "inventory"]
-};
-
-const SLIDE_KEYS = [
-  {
-    id: "slide-pulse",
-    kicker: "home.slide.pulse.kicker",
-    title: "home.slide.pulse.title",
-    description: "home.slide.pulse.description",
-    ctaLabel: "home.slide.pulse.cta",
-    href: "/",
-    stats: [
-      { label: "home.slide.pulse.statLatency", value: "< 90s" },
-      { label: "home.slide.pulse.statCoverage", value: "home.slide.pulse.statCoverageValue" }
-    ]
-  },
-  {
-    id: "slide-flow",
-    kicker: "home.slide.flow.kicker",
-    title: "home.slide.flow.title",
-    description: "home.slide.flow.description",
-    ctaLabel: "home.slide.flow.cta",
-    href: "/flow",
-    stats: [
-      { label: "home.slide.flow.statSignals", value: "home.slide.flow.statSignalsValue" },
-      { label: "home.slide.flow.statGuardrails", value: "home.slide.flow.statGuardrailsValue" }
-    ]
-  },
-  {
-    id: "slide-strategy",
-    kicker: "home.slide.strategy.kicker",
-    title: "home.slide.strategy.title",
-    description: "home.slide.strategy.description",
-    ctaLabel: "home.slide.strategy.cta",
-    href: "/strategy",
-    stats: [
-      { label: "home.slide.strategy.statTimeframe", value: "home.slide.strategy.statTimeframeValue" },
-      { label: "home.slide.strategy.statInsight", value: "home.slide.strategy.statInsightValue" }
-    ]
-  }
-];
-
-const FEATURE_CARDS = [
-  {
-    id: "feature-dashboard",
-    label: "home.feature.dashboard.label",
-    description: "home.feature.dashboard.desc",
-    href: "/",
-    icon: IconPulse
-  },
-  {
-    id: "feature-flow",
-    label: "home.feature.flow.label",
-    description: "home.feature.flow.desc",
-    href: "/flow",
-    icon: IconRadar
-  },
-  {
-    id: "feature-strategy",
-    label: "home.feature.strategy.label",
-    description: "home.feature.strategy.desc",
-    href: "/strategy",
-    icon: IconChart
-  },
-  {
-    id: "feature-portfolio",
-    label: "home.feature.portfolio.label",
-    description: "home.feature.portfolio.desc",
-    href: "/portfolio",
-    icon: IconStack
-  },
-  {
-    id: "feature-alerts",
-    label: "home.feature.alerts.label",
-    description: "home.feature.alerts.desc",
-    href: "/alerts",
-    icon: IconBell
-  },
-  {
-    id: "feature-experience",
-    label: "home.feature.experience.label",
-    description: "home.feature.experience.desc",
-    href: "/experience",
-    icon: IconSpark
-  }
-];
-
-const TRUST_BADGES = [
-  "home.trust.ssl",
-  "home.trust.price",
-  "home.trust.fees",
-  "home.trust.free"
-];
-
-const PARTNER_KEYS = [
-  "home.partner.twelveData",
-  "home.partner.secEdgar",
-  "home.partner.newsApi",
-  "home.partner.tbank"
-];
-
-const TESTIMONIALS = [
-  {
-    quoteKey: "home.testimonial.retail.quote",
-    authorKey: "home.testimonial.retail.author"
-  },
-  {
-    quoteKey: "home.testimonial.trader.quote",
-    authorKey: "home.testimonial.trader.author"
-  },
-  {
-    quoteKey: "home.testimonial.operations.quote",
-    authorKey: "home.testimonial.operations.author"
-  }
-];
-
-type ModuleConfig = {
-  id: string;
-  label: string;
-  enabled: boolean;
-};
-
-function sanitizeNextPath(input: unknown) {
-  const value = typeof input === "string" ? input : "";
-  if (!value.startsWith("/")) return "/";
-  if (value.startsWith("//")) return "/";
-  return value;
-}
 
 const WatchlistWidget = dynamic(
   () => import("@/components/widgets/WatchlistWidget"),
@@ -285,6 +143,8 @@ export default function HomePage() {
   const flags = useFeatureFlags();
 
   useEffect(() => {
+    if (!authenticated) return;
+
     const routes = [
       "/flow",
       "/strategy",
@@ -318,7 +178,7 @@ export default function HomePage() {
         window.cancelIdleCallback(idle);
       }
     };
-  }, [router]);
+  }, [authenticated, router]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -628,9 +488,9 @@ export default function HomePage() {
       }
       setSbpStatus("success");
       pushToast(t("home.sbp.submittedToast"), "success");
-    } catch (err: any) {
+    } catch (err: unknown) {
       setSbpStatus("error");
-      const message = err.message || t("home.sbp.errorRegister");
+      const message = errorMessage(err, t("home.sbp.errorRegister"));
       setSbpError(message);
       pushToast(message, "error");
     }
@@ -747,7 +607,7 @@ export default function HomePage() {
   );
 
   const nextPath = useMemo(
-    () => sanitizeNextPath(router.query.next),
+    () => sanitizeRelativePath(router.query.next),
     [router.query.next]
   );
 

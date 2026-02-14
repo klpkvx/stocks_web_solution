@@ -75,7 +75,12 @@ function resolvePagePathname(pathname: string) {
 }
 
 function sessionSecret() {
-  return process.env.AUTH_SESSION_SECRET || DEFAULT_SESSION_SECRET;
+  const secret = String(process.env.AUTH_SESSION_SECRET || "").trim();
+  if (secret) return secret;
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("AUTH_SESSION_SECRET must be set in production");
+  }
+  return DEFAULT_SESSION_SECRET;
 }
 
 async function getHmacKey() {
@@ -144,12 +149,14 @@ async function validateSessionToken(rawToken: string): Promise<boolean> {
     const payload = JSON.parse(payloadText) as {
       sub?: string;
       login?: string;
+      jti?: string;
       exp?: number;
     };
     const now = Math.floor(Date.now() / 1000);
 
     if (!payload || typeof payload !== "object") return false;
     if (!payload.sub || !payload.login) return false;
+    if (!payload.jti || typeof payload.jti !== "string") return false;
     if (!Number.isFinite(payload.exp) || Number(payload.exp) <= now) return false;
 
     return true;
@@ -177,32 +184,62 @@ function clearSessionCookie(response: NextResponse) {
   });
 }
 
-export async function middleware(request: NextRequest) {
+function applySecurityHeaders(response: NextResponse, request: NextRequest) {
+  response.headers.set("x-content-type-options", "nosniff");
+  response.headers.set("x-frame-options", "DENY");
+  response.headers.set("referrer-policy", "strict-origin-when-cross-origin");
+  response.headers.set("permissions-policy", "camera=(), microphone=(), geolocation=()");
+  response.headers.set("cross-origin-opener-policy", "same-origin");
+  response.headers.set("cross-origin-resource-policy", "same-origin");
+  response.headers.set("origin-agent-cluster", "?1");
+  response.headers.set("x-permitted-cross-domain-policies", "none");
+  response.headers.set("x-dns-prefetch-control", "off");
+
+  const forwardedProto = (request.headers.get("x-forwarded-proto") || "")
+    .split(",")[0]
+    ?.trim()
+    .toLowerCase();
+  const isHttps = forwardedProto === "https" || request.nextUrl.protocol === "https:";
+  if (isHttps) {
+    response.headers.set(
+      "strict-transport-security",
+      "max-age=63072000; includeSubDomains; preload"
+    );
+  }
+
+  return response;
+}
+
+export async function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
   const pagePathname = resolvePagePathname(pathname);
+  const isApiRequest = pathname === "/api" || pathname.startsWith("/api/");
   const isNextDataRequest = pathname.startsWith("/_next/data/");
   const requestedPath = isNextDataRequest
     ? `${pagePathname}${search || ""}`
     : `${pathname}${search || ""}`;
   const session = await checkSession(request);
 
-  if (pathname.startsWith("/api/")) {
+  if (isApiRequest) {
     if (session.valid || isPublicApiPath(pathname)) {
       if (session.cookiePresent && !session.valid) {
-        const response = NextResponse.next();
+        const response = applySecurityHeaders(NextResponse.next(), request);
         clearSessionCookie(response);
         return response;
       }
-      return NextResponse.next();
+      return applySecurityHeaders(NextResponse.next(), request);
     }
-    const response = NextResponse.json(
-      {
-        type: "https://stockpulse.app/problems/auth-required",
-        title: "Unauthorized",
-        status: 401,
-        detail: "Authentication required"
-      },
-      { status: 401 }
+    const response = applySecurityHeaders(
+      NextResponse.json(
+        {
+          type: "https://stockpulse.app/problems/auth-required",
+          title: "Unauthorized",
+          status: 401,
+          detail: "Authentication required"
+        },
+        { status: 401 }
+      ),
+      request
     );
     if (session.cookiePresent) {
       clearSessionCookie(response);
@@ -215,28 +252,28 @@ export async function middleware(request: NextRequest) {
       const target = request.nextUrl.clone();
       target.pathname = "/";
       target.search = "";
-      return NextResponse.redirect(target);
+      return applySecurityHeaders(NextResponse.redirect(target), request);
     }
     if (session.cookiePresent && !session.valid) {
-      const response = NextResponse.next();
+      const response = applySecurityHeaders(NextResponse.next(), request);
       clearSessionCookie(response);
       return response;
     }
-    return NextResponse.next();
+    return applySecurityHeaders(NextResponse.next(), request);
   }
 
   if (!session.valid) {
     const target = request.nextUrl.clone();
     target.pathname = "/";
     target.search = `?next=${encodeURIComponent(requestedPath)}`;
-    const response = NextResponse.redirect(target);
+    const response = applySecurityHeaders(NextResponse.redirect(target), request);
     if (session.cookiePresent) {
       clearSessionCookie(response);
     }
     return response;
   }
 
-  return NextResponse.next();
+  return applySecurityHeaders(NextResponse.next(), request);
 }
 
 export const config = {

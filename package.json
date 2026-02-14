@@ -5,10 +5,21 @@
   "scripts": {
     "predev": "rm -rf .next/dev",
     "dev": "next dev --webpack",
+    "dev:infra": "npm run infra:up && next dev --webpack",
     "dev:turbo": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "start:infra": "npm run infra:up && next start",
+    "stack:up": "docker compose up -d --build",
+    "stack:down": "docker compose down",
+    "stack:logs": "docker compose logs -f",
+    "lint": "tsc --noEmit",
+    "test": "vitest run",
+    "infra:up": "docker compose -f docker-compose.datastores.yml up -d",
+    "infra:down": "docker compose -f docker-compose.datastores.yml down",
+    "infra:logs": "docker compose -f docker-compose.datastores.yml logs -f",
+    "infra:install:linux": "bash scripts/install-datastores-linux.sh",
+    "stack:install:linux": "bash scripts/install-stockpulse-linux.sh",
     "perf:budget": "node scripts/check-performance-budget.mjs",
     "perf:api": "node scripts/check-api-budget.mjs",
     "ci:perf": "npm run build && npm run perf:budget",
@@ -16,9 +27,16 @@
     "load:api:smoke": "k6 run -e VUS=10 -e DURATION=30s scripts/k6-api-load.js"
   },
   "dependencies": {
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.212.0",
+    "@opentelemetry/resources": "^2.5.1",
+    "@opentelemetry/sdk-node": "^0.212.0",
+    "@opentelemetry/semantic-conventions": "^1.39.0",
     "@tanstack/react-query": "^5.90.21",
+    "ioredis": "^5.9.3",
     "lightweight-charts": "^4.2.1",
     "next": "^16.1.6",
+    "pg": "^8.18.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "sentiment": "^5.0.2",
@@ -27,6 +45,7 @@
   },
   "devDependencies": {
     "@types/node": "^20.14.12",
+    "@types/pg": "^8.16.0",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "autoprefixer": "^10.4.20",
@@ -34,6 +53,7 @@
     "eslint-config-next": "^16.1.6",
     "postcss": "^8.4.41",
     "tailwindcss": "^3.4.10",
-    "typescript": "^5.5.4"
+    "typescript": "^5.5.4",
+    "vitest": "^4.0.18"
   }
 }

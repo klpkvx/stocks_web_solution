@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import type { AuthSessionResponse } from "@/types/auth";
+import { readApiErrorMessage } from "@/lib/httpError";
 
 const EMPTY_SESSION: AuthSessionResponse = {
   authenticated: false,
@@ -12,26 +13,28 @@ let cachedSession: AuthSessionResponse | null = null;
 let cachedSessionAt = 0;
 let inFlightSessionRequest: Promise<AuthSessionResponse> | null = null;
 
-function readErrorMessage(payload: any, fallback: string) {
-  return (
-    payload?.detail ||
-    payload?.error ||
-    payload?.message ||
-    (Array.isArray(payload?.errors) ? payload.errors[0]?.message : null) ||
-    fallback
-  );
-}
-
-function normalizeSession(payload: any): AuthSessionResponse {
+function normalizeSession(payload: unknown): AuthSessionResponse {
   if (!payload || typeof payload !== "object") {
     return EMPTY_SESSION;
   }
 
-  if (!payload.authenticated || !payload.user) {
+  const source = payload as {
+    authenticated?: unknown;
+    user?: {
+      id?: unknown;
+      login?: unknown;
+      role?: unknown;
+      name?: unknown;
+      email?: unknown;
+    } | null;
+  };
+
+  if (!source.authenticated || !source.user) {
     return EMPTY_SESSION;
   }
 
-  const user = payload.user;
+  const user = source.user;
+  const role = user.role === "admin" ? "admin" : "user";
   if (!user.id || !user.login || !user.name) {
     return EMPTY_SESSION;
   }
@@ -41,6 +44,7 @@ function normalizeSession(payload: any): AuthSessionResponse {
     user: {
       id: String(user.id),
       login: String(user.login),
+      role,
       name: String(user.name),
       ...(user.email ? { email: String(user.email) } : {})
     }
@@ -60,7 +64,7 @@ async function fetchAuthSession(): Promise<AuthSessionResponse> {
   });
   const payload = await response.json().catch(() => null);
   if (!response.ok) {
-    throw new Error(readErrorMessage(payload, "Failed to load session"));
+    throw new Error(readApiErrorMessage(payload, "Failed to load session"));
   }
   return normalizeSession(payload);
 }
@@ -97,7 +101,7 @@ async function executeLogout(): Promise<void> {
   });
   const payload = await response.json().catch(() => null);
   if (!response.ok) {
-    throw new Error(readErrorMessage(payload, "Failed to logout"));
+    throw new Error(readApiErrorMessage(payload, "Failed to logout"));
   }
 }
 

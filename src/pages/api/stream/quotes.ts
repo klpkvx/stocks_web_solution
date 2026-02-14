@@ -3,7 +3,7 @@ import { dataAccess } from "@/lib/dataAccess/service";
 import { parseQuery } from "@/lib/apiValidation";
 import { streamQuotesQuerySchema } from "@/contracts/requestContracts";
 import { withApiObservability } from "@/lib/apiObservability";
-import { methodNotAllowed } from "@/lib/apiProblem";
+import { errorMessage } from "@/lib/errorMessage";
 
 export const config = {
   api: {
@@ -24,10 +24,6 @@ function heartbeatMs() {
 }
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== "GET") {
-    return methodNotAllowed(req, res, ["GET"]);
-  }
-
   const query = parseQuery(req, res, streamQuotesQuerySchema);
   if (!query) return;
   const symbols = query.symbols;
@@ -51,10 +47,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           updatedAt: new Date().toISOString()
         })}\n\n`
       );
-    } catch (error: any) {
+    } catch (error: unknown) {
       res.write(
         `event: error\ndata: ${JSON.stringify({
-          message: error?.message || "Stream update failed"
+          message: errorMessage(error, "Stream update failed")
         })}\n\n`
       );
     }
@@ -76,6 +72,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 }
 
 export default withApiObservability("stream.quotes", handler, {
+  methods: ["GET"],
   rateLimit: {
     max: 90,
     windowMs: 60 * 1000,

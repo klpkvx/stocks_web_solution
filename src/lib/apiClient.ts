@@ -1,4 +1,5 @@
 import type { ZodSchema } from "zod";
+import { errorMessage } from "@/lib/errorMessage";
 
 export async function fetchJson<T>(
   url: string,
@@ -29,11 +30,11 @@ export async function fetchJson<T>(
       throw new Error("Invalid API response contract");
     }
     return parsed.data as T;
-  } catch (error: any) {
-    if (error?.name === "AbortError") {
+  } catch (error: unknown) {
+    if (error instanceof Error && error.name === "AbortError") {
       throw new Error("Request timeout");
     }
-    throw error;
+    throw new Error(errorMessage(error, "Request failed"));
   } finally {
     clearTimeout(timer);
   }

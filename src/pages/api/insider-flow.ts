@@ -5,6 +5,7 @@ import { cached } from "@/lib/serverStore";
 import { withApiObservability } from "@/lib/apiObservability";
 import { parseQuery } from "@/lib/apiValidation";
 import { insiderFlowQuerySchema } from "@/contracts/requestContracts";
+import { errorMessage } from "@/lib/errorMessage";
 
 const DEFAULT_SYMBOLS = [
   "AAPL",
@@ -29,10 +30,6 @@ async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  if (req.method !== "GET") {
-    return res.status(405).json({ error: "Method not allowed" });
-  }
-
   const query = parseQuery(req, res, insiderFlowQuerySchema);
   if (!query) return;
   const symbols = query.symbols?.length ? query.symbols : DEFAULT_SYMBOLS;
@@ -98,11 +95,13 @@ async function handler(
       `s-maxage=${INSIDER_EXPIRES_IN}, stale-while-revalidate=${INSIDER_EXPIRES_IN}`
     );
     return res.status(200).json(payload);
-  } catch (error: any) {
+  } catch (error: unknown) {
     return res
       .status(500)
-      .json({ error: error?.message || "Failed to load insider flow" });
+      .json({ error: errorMessage(error, "Failed to load insider flow") });
   }
 }
 
-export default withApiObservability("insider_flow", handler);
+export default withApiObservability("insider_flow", handler, {
+  methods: ["GET"]
+});

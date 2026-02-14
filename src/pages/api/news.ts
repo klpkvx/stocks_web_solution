@@ -3,15 +3,12 @@ import { dataAccess } from "@/lib/dataAccess/service";
 import { withApiObservability } from "@/lib/apiObservability";
 import { parseQuery } from "@/lib/apiValidation";
 import { newsQuerySchema } from "@/contracts/requestContracts";
+import { errorMessage } from "@/lib/errorMessage";
 
 async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  if (req.method !== "GET") {
-    return res.status(405).json({ error: "Method not allowed" });
-  }
-
   const query = parseQuery(req, res, newsQuerySchema);
   if (!query) return;
   const symbol = query.symbol || "";
@@ -32,11 +29,13 @@ async function handler(
     );
 
     return res.status(200).json(payload);
-  } catch (error: any) {
+  } catch (error: unknown) {
     return res
       .status(500)
-      .json({ error: error?.message || "Failed to load news" });
+      .json({ error: errorMessage(error, "Failed to load news") });
   }
 }
 
-export default withApiObservability("news", handler);
+export default withApiObservability("news", handler, {
+  methods: ["GET"]
+});

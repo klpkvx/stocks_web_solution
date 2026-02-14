@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+import { canWriteResponse } from "@/lib/responseGuards";
 
 const TRACE_ID_KEY = "__stock_pulse_trace_id";
 
@@ -11,11 +12,6 @@ export type ProblemDetail = {
   errors?: Array<{ path: string; message: string }>;
   traceId?: string;
 };
-
-function canWrite(res: NextApiResponse) {
-  const socket = (res as any).socket;
-  return !res.headersSent && !res.writableEnded && !res.destroyed && !socket?.destroyed;
-}
 
 function getTraceId(
   req: NextApiRequest,
@@ -43,7 +39,7 @@ export function sendProblem(
   res: NextApiResponse,
   problem: ProblemDetail
 ) {
-  if (!canWrite(res)) return null;
+  if (!canWriteResponse(res)) return null;
 
   const payload: Record<string, unknown> = {
     type: problem.type || "about:blank",

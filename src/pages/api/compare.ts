@@ -4,6 +4,7 @@ import { withApiObservability } from "@/lib/apiObservability";
 import { dataAccess } from "@/lib/dataAccess/service";
 import { parseQuery } from "@/lib/apiValidation";
 import { compareQuerySchema } from "@/contracts/requestContracts";
+import { errorMessage } from "@/lib/errorMessage";
 
 const COMPARE_REFRESH_MS = 10 * 60 * 1000;
 const COMPARE_STALE_MS = 2 * 60 * 60 * 1000;
@@ -13,10 +14,6 @@ async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  if (req.method !== "GET") {
-    return res.status(405).json({ error: "Method not allowed" });
-  }
-
   const query = parseQuery(req, res, compareQuerySchema);
   if (!query) return;
   const symbols = query.symbols;
@@ -72,14 +69,17 @@ async function handler(
       `s-maxage=${COMPARE_EXPIRES_IN}, stale-while-revalidate=${COMPARE_EXPIRES_IN}`
     );
     return res.status(200).json(payload);
-  } catch (error: any) {
-    if (String(error?.message || "").includes("No data available")) {
+  } catch (error: unknown) {
+    const message = errorMessage(error, "Failed to compare");
+    if (message.includes("No data available")) {
       return res.status(404).json({ error: "No data available" });
     }
     return res
       .status(500)
-      .json({ error: error?.message || "Failed to compare" });
+      .json({ error: message });
   }
 }
 
-export default withApiObservability("compare", handler);
+export default withApiObservability("compare", handler, {
+  methods: ["GET"]
+});

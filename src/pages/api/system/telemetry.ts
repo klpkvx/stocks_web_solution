@@ -4,11 +4,7 @@ import { withApiObservability } from "@/lib/apiObservability";
 import { parseQuery } from "@/lib/apiValidation";
 import { emptyQuerySchema } from "@/contracts/requestContracts";
 
-async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== "GET") {
-    return res.status(405).json({ error: "Method not allowed" });
-  }
-  const query = parseQuery(req, res, emptyQuerySchema);
+async function handler(req: NextApiRequest, res: NextApiResponse) {  const query = parseQuery(req, res, emptyQuerySchema);
   if (!query) return;
 
   return res.status(200).json({
@@ -17,4 +13,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   });
 }
 
-export default withApiObservability("system.telemetry", handler);
+export default withApiObservability("system.telemetry", handler, {
+  methods: ["GET"]
+});

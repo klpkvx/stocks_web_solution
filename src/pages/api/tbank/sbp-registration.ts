@@ -1,9 +1,10 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import crypto from "crypto";
-import { methodNotAllowed, sendProblem } from "@/lib/apiProblem";
+import { sendProblem } from "@/lib/apiProblem";
 import { parseBody } from "@/lib/apiValidation";
 import { withApiObservability } from "@/lib/apiObservability";
 import { tbankSbpRegistrationBodySchema } from "@/contracts/requestContracts";
+import { errorMessage } from "@/lib/errorMessage";
 
 const DEFAULT_BASE = "https://tacq-tom.tcsbank.ru";
 const DEFAULT_PATH = "/tom-bpm/api/v1/public/service-requests/sbp-registration";
@@ -36,10 +37,6 @@ async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  if (req.method !== "POST") {
-    return methodNotAllowed(req, res, ["POST"]);
-  }
-
   const authDate = new Date().toISOString();
   const authorization = buildAuthHeader(authDate);
 
@@ -111,17 +108,18 @@ async function handler(
     }
 
     return res.status(200).json({ success: true, data });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return sendProblem(req, res, {
       type: "https://stockpulse.app/problems/upstream-error",
       title: "Upstream Service Error",
       status: 502,
-      detail: error?.message || "SBP registration failed"
+      detail: errorMessage(error, "SBP registration failed")
     });
   }
 }
 
 export default withApiObservability("tbank.sbp_registration", handler, {
+  methods: ["POST"],
   rateLimit: {
     max: 20,
     windowMs: 60 * 1000,

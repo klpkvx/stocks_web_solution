@@ -2,7 +2,6 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { parseBody } from "@/lib/apiValidation";
 import { webVitalsBodySchema } from "@/contracts/requestContracts";
 import { withApiObservability } from "@/lib/apiObservability";
-import { methodNotAllowed } from "@/lib/apiProblem";
 
 const METRICS: Array<{
   id: string;
@@ -38,25 +37,22 @@ async function handler(
     return res.status(204).end();
   }
 
-  if (req.method === "GET") {
-    const grouped = METRICS.reduce<Record<string, number[]>>((acc, metric) => {
-      acc[metric.name] = acc[metric.name] || [];
-      acc[metric.name].push(metric.value);
-      return acc;
-    }, {});
+  const grouped = METRICS.reduce<Record<string, number[]>>((acc, metric) => {
+    acc[metric.name] = acc[metric.name] || [];
+    acc[metric.name].push(metric.value);
+    return acc;
+  }, {});
 
-    const summary = Object.entries(grouped).map(([name, values]) => ({
-      name,
-      count: values.length,
-      avg: values.reduce((acc, value) => acc + value, 0) / values.length
-    }));
-    return res.status(200).json({ summary, count: METRICS.length });
-  }
-
-  return methodNotAllowed(req, res, ["GET", "POST"]);
+  const summary = Object.entries(grouped).map(([name, values]) => ({
+    name,
+    count: values.length,
+    avg: values.reduce((acc, value) => acc + value, 0) / values.length
+  }));
+  return res.status(200).json({ summary, count: METRICS.length });
 }
 
 export default withApiObservability("web_vitals", handler, {
+  methods: ["GET", "POST"],
   rateLimit: {
     max: 300,
     windowMs: 60 * 1000,

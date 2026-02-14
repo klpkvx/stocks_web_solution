@@ -13,6 +13,18 @@ type UseCachedApiQueryOptions<TData> = {
   staleIfError?: boolean;
 };
 
+function resolveTtlMs(value: unknown, fallbackTtlMs: number) {
+  if (!value || typeof value !== "object") {
+    return fallbackTtlMs;
+  }
+  const candidate = (value as { expiresIn?: unknown }).expiresIn;
+  const expiresIn = Number(candidate || 0);
+  if (Number.isFinite(expiresIn) && expiresIn > 0) {
+    return expiresIn * 1000;
+  }
+  return fallbackTtlMs;
+}
+
 export function useCachedApiQuery<TData>(
   options: UseCachedApiQueryOptions<TData>
 ): UseQueryResult<TData, Error> {
@@ -33,13 +45,9 @@ export function useCachedApiQuery<TData>(
     queryFn: () =>
       resolveWithClientCache({
         key: cacheKey,
-        ttlMs: (value: any) =>
-          Number(value?.expiresIn || 0) > 0
-            ? Number(value.expiresIn) * 1000
-            : fallbackTtlMs,
+        ttlMs: (value: unknown) => resolveTtlMs(value, fallbackTtlMs),
         fetcher: options.fetcher,
         staleIfError: options.staleIfError ?? true
       })
   });
 }
-

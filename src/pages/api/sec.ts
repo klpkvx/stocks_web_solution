@@ -4,6 +4,7 @@ import { cached } from "@/lib/serverStore";
 import { withApiObservability } from "@/lib/apiObservability";
 import { parseQuery } from "@/lib/apiValidation";
 import { secQuerySchema } from "@/contracts/requestContracts";
+import { errorMessage } from "@/lib/errorMessage";
 
 const SEC_REFRESH_MS = 30 * 60 * 1000;
 const SEC_STALE_MS = 12 * 60 * 60 * 1000;
@@ -13,10 +14,6 @@ async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  if (req.method !== "GET") {
-    return res.status(405).json({ error: "Method not allowed" });
-  }
-
   const query = parseQuery(req, res, secQuerySchema);
   if (!query) return;
   const symbol = query.symbol;
@@ -44,11 +41,13 @@ async function handler(
       `s-maxage=${SEC_EXPIRES_IN}, stale-while-revalidate=${SEC_EXPIRES_IN}`
     );
     return res.status(200).json(payload);
-  } catch (error: any) {
+  } catch (error: unknown) {
     return res
       .status(500)
-      .json({ error: error?.message || "Failed to load filings" });
+      .json({ error: errorMessage(error, "Failed to load filings") });
   }
 }
 
-export default withApiObservability("sec", handler);
+export default withApiObservability("sec", handler, {
+  methods: ["GET"]
+});

@@ -8,6 +8,7 @@ import { withApiObservability } from "@/lib/apiObservability";
 import { dataAccess } from "@/lib/dataAccess/service";
 import { parseQuery } from "@/lib/apiValidation";
 import { stockQuerySchema } from "@/contracts/requestContracts";
+import { errorMessage } from "@/lib/errorMessage";
 
 type StockPayload = {
   quote: Quote;
@@ -257,10 +258,6 @@ async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  if (req.method !== "GET") {
-    return res.status(405).json({ error: "Method not allowed" });
-  }
-
   const query = parseQuery(req, res, stockQuerySchema);
   if (!query) return;
   const symbol = query.symbol;
@@ -288,7 +285,7 @@ async function handler(
 
     res.setHeader("Cache-Control", "s-maxage=60, stale-while-revalidate=120");
     return res.status(200).json(payload);
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (stale) {
       res.setHeader("Cache-Control", "s-maxage=30, stale-while-revalidate=120");
       return res.status(200).json({
@@ -313,7 +310,7 @@ async function handler(
       thesis: buildThesis(symbol, quote, 0, insights),
       analytics: buildAnalytics(0, insights, quote, null),
       secSummary: null,
-      warning: error?.message || "Failed to load stock data",
+      warning: errorMessage(error, "Failed to load stock data"),
       secWarning: null,
       stale: true
     };
@@ -322,4 +319,6 @@ async function handler(
   }
 }
 
-export default withApiObservability("stock", handler);
+export default withApiObservability("stock", handler, {
+  methods: ["GET"]
+});

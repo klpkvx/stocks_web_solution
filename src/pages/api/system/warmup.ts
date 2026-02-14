@@ -7,10 +7,6 @@ import { warmupQuerySchema } from "@/contracts/requestContracts";
 const DEFAULT_SYMBOLS = ["AAPL", "MSFT", "GOOGL", "NVDA", "TSLA", "AMZN"];
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== "POST" && req.method !== "GET") {
-    return res.status(405).json({ error: "Method not allowed" });
-  }
-
   const secret = process.env.CRON_SECRET;
   if (secret) {
     const token = req.headers.authorization?.replace(/^Bearer\s+/i, "") || "";
@@ -50,4 +46,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   });
 }
 
-export default withApiObservability("system.warmup", handler);
+export default withApiObservability("system.warmup", handler, {
+  methods: ["GET", "POST"]
+});

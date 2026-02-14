@@ -8,10 +8,6 @@ async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  if (req.method !== "GET") {
-    return res.status(405).json({ error: "Method not allowed" });
-  }
-
   const query = parseQuery(req, res, quoteQuerySchema);
   if (!query) return;
   const symbol = query.symbol;
@@ -35,4 +31,6 @@ async function handler(
   });
 }
 
-export default withApiObservability("quote", handler);
+export default withApiObservability("quote", handler, {
+  methods: ["GET"]
+});

@@ -3,12 +3,9 @@ import { dataAccess } from "@/lib/dataAccess/service";
 import { withApiObservability } from "@/lib/apiObservability";
 import { parseQuery } from "@/lib/apiValidation";
 import { tickersQuerySchema } from "@/contracts/requestContracts";
+import { errorMessage } from "@/lib/errorMessage";
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== "GET") {
-    return res.status(405).json({ error: "Method not allowed" });
-  }
-
   const query = parseQuery(req, res, tickersQuerySchema);
   if (!query) return;
   const q = query.q;
@@ -22,13 +19,15 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       `public, max-age=${payload.expiresIn}, stale-while-revalidate=${payload.expiresIn}`
     );
     return res.status(200).json(payload);
-  } catch (error: any) {
+  } catch (error: unknown) {
     return res.status(200).json({
       tickers: [],
       expiresIn: 60,
-      error: error?.message || "Ticker search unavailable"
+      error: errorMessage(error, "Ticker search unavailable")
     });
   }
 }
 
-export default withApiObservability("tickers", handler);
+export default withApiObservability("tickers", handler, {
+  methods: ["GET"]
+});

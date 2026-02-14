@@ -12,65 +12,15 @@ import { createActivityEvent, countRecentActivity, ActivityEvent } from "@/lib/a
 import { useQuotes } from "@/lib/useQuotes";
 import { useCachedApiQuery } from "@/lib/queries/useCachedApiQuery";
 import { fetchJson } from "@/lib/apiClient";
-
-type DipAlertRule = {
-  id: string;
-  symbol: string;
-  anchorPrice?: number | null;
-  dropPercent: number;
-  maxSpend: number;
-  autoBuy: boolean;
-  notify: boolean;
-  createdAt: string;
-  triggeredAt?: string;
-};
-
-type CopyAllocation = {
-  id: string;
-  traderId: string;
-  amount: number;
-  createdAt: string;
-};
-
-type RoundUpTxn = {
-  id: string;
-  label: string;
-  amount: number;
-  roundUp: number;
-  multiplier: number;
-  invested: number;
-  timestamp: string;
-  symbol: string;
-};
-
-type DreamContest = {
-  id: string;
-  name: string;
-  targets: { symbol: string; shares: number }[];
-  deposits: number;
-  startedAt: string;
-};
-
-type NotificationItem = {
-  id: string;
-  title: string;
-  body: string;
-  timestamp: string;
-};
-
-const DEFAULT_WATCHLIST = ["AAPL", "MSFT", "GOOGL"];
-
-const DEFAULT_DREAM: DreamContest = {
-  id: "dream-1",
-  name: "Dream Tech Trio",
-  targets: [
-    { symbol: "AAPL", shares: 1 },
-    { symbol: "NVDA", shares: 1 },
-    { symbol: "TSLA", shares: 1 }
-  ],
-  deposits: 0,
-  startedAt: "2024-06-01T00:00:00.000Z"
-};
+import {
+  DEFAULT_DREAM,
+  DEFAULT_WATCHLIST,
+  type CopyAllocation,
+  type DipAlertRule,
+  type DreamContest,
+  type NotificationItem,
+  type RoundUpTxn
+} from "@/features/flow/types";
 
 export default function FlowLabPage() {
   const { t } = useI18n();

@@ -1,8 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { z } from "zod";
-import { methodNotAllowed } from "@/lib/apiProblem";
+import { sendProblem } from "@/lib/apiProblem";
 import { parseBody, parseQuery } from "@/lib/apiValidation";
 import { withApiObservability } from "@/lib/apiObservability";
+import { getRequestAuth } from "@/lib/requestAuth";
 import { getOrCreateUser, updateUserRecord } from "@/lib/userRepository";
 
 const userIdSchema = z
@@ -30,26 +31,41 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (!query) return;
 
   const userId = query.id;
+  const auth = getRequestAuth(req);
+  if (!auth) {
+    return sendProblem(req, res, {
+      type: "https://stockpulse.app/problems/auth-required",
+      title: "Unauthorized",
+      status: 401,
+      detail: "Authentication required"
+    });
+  }
+
+  if (auth.role !== "admin" && auth.userId !== userId) {
+    return sendProblem(req, res, {
+      type: "https://stockpulse.app/problems/forbidden",
+      title: "Forbidden",
+      status: 403,
+      detail: "You can only access your own profile"
+    });
+  }
 
   if (req.method === "GET") {
-    const user = getOrCreateUser(userId);
+    const user = await getOrCreateUser(userId);
     res.setHeader("Cache-Control", "private, no-store");
     return res.status(200).json(user);
   }
 
-  if (req.method === "PATCH") {
-    const body = parseBody(req, res, updateUserBodySchema);
-    if (!body) return;
+  const body = parseBody(req, res, updateUserBodySchema);
+  if (!body) return;
 
-    const user = updateUserRecord(userId, body);
-    res.setHeader("Cache-Control", "private, no-store");
-    return res.status(200).json(user);
-  }
-
-  return methodNotAllowed(req, res, ["GET", "PATCH"]);
+  const user = await updateUserRecord(userId, body);
+  res.setHeader("Cache-Control", "private, no-store");
+  return res.status(200).json(user);
 }
 
 export default withApiObservability("users.id", handler, {
+  methods: ["GET", "PATCH"],
   rateLimit: {
     max: 180,
     windowMs: 60 * 1000,

@@ -7,6 +7,7 @@ import { resolveWithClientCache, primeClientCache } from "@/lib/queryCacheBridge
 import { readFreshCache, readStaleCache } from "@/stores/apiCacheStore";
 import { fetchJson } from "@/lib/apiClient";
 import { tickersPayloadSchema } from "@/contracts/apiContracts";
+import { errorMessage } from "@/lib/errorMessage";
 
 const DEFAULT_TTL_MS = 6 * 60 * 60 * 1000;
 const MIN_API_QUERY_LENGTH = 3;
@@ -250,9 +251,10 @@ export default function TickerSearchInput({
         if (merged.length) {
           setActive(0);
         }
-      } catch (err: any) {
-        if (!cancelled && requestIdRef.current === requestId && err?.name !== "AbortError") {
-          setError(err.message || t("search.errorLoadTickers"));
+      } catch (err: unknown) {
+        if (!cancelled && requestIdRef.current === requestId) {
+          if (err instanceof Error && err.name === "AbortError") return;
+          setError(errorMessage(err, t("search.errorLoadTickers")));
         }
       } finally {
         if (!cancelled && requestIdRef.current === requestId) {

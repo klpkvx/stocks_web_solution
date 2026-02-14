@@ -5,6 +5,7 @@ type L2Entry<T> = {
 };
 
 const DEFAULT_TIMEOUT_MS = 900;
+const lockTokens = new Map<string, string>();
 
 function getConfig() {
   const baseUrl = process.env.REDIS_REST_URL || process.env.UPSTASH_REDIS_REST_URL;
@@ -82,16 +83,21 @@ export async function acquireL2Lock(key: string, ttlSeconds = 8) {
   const { baseUrl } = getConfig();
   const safeTtl = Math.max(1, Math.min(60, Math.floor(ttlSeconds)));
   const token = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  const redisKey = `lock:${key}`;
 
   try {
     // Upstash REST-compatible NX lock.
     const url = `${baseUrl}/set/${encodeURIComponent(
-      `lock:${key}`
+      redisKey
     )}/${encodeURIComponent(token)}?NX=true&EX=${safeTtl}`;
     const response = await fetchWithTimeout(url, { method: "POST" }, 800);
     if (!response.ok) return false;
     const payload = await response.json().catch(() => null);
-    return payload?.result === "OK";
+    const acquired = payload?.result === "OK";
+    if (acquired) {
+      lockTokens.set(redisKey, token);
+    }
+    return acquired;
   } catch {
     return false;
   }
@@ -100,12 +106,31 @@ export async function acquireL2Lock(key: string, ttlSeconds = 8) {
 export async function releaseL2Lock(key: string) {
   if (!isL2CacheEnabled()) return;
   const { baseUrl } = getConfig();
+  const redisKey = `lock:${key}`;
+  const token = lockTokens.get(redisKey);
+  if (!token) return;
+
   try {
-    await fetchWithTimeout(`${baseUrl}/del/${encodeURIComponent(`lock:${key}`)}`, {
-      method: "POST"
-    }, 800);
+    const current = await fetchWithTimeout(
+      `${baseUrl}/get/${encodeURIComponent(redisKey)}`,
+      { method: "GET" },
+      800
+    );
+    if (!current.ok) return;
+
+    const payload = await current.json().catch(() => null);
+    const value = String(payload?.result || "");
+    if (value !== token) return;
+
+    await fetchWithTimeout(
+      `${baseUrl}/del/${encodeURIComponent(redisKey)}`,
+      { method: "POST" },
+      800
+    );
   } catch {
     // Best effort.
+  } finally {
+    lockTokens.delete(redisKey);
   }
 }
 

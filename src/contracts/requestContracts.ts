@@ -121,7 +121,25 @@ const loginBodyValueSchema = z
   .regex(LOGIN_REGEX, "Invalid login format")
   .transform((value) => value.toLowerCase());
 
-const passwordBodyValueSchema = z.string().min(8).max(128);
+const loginPasswordValueSchema = z.string().min(8).max(128);
+
+const registerPasswordValueSchema = loginPasswordValueSchema.superRefine(
+  (value, ctx) => {
+    const strongEnough =
+      value.length >= 12 &&
+      /[a-z]/.test(value) &&
+      /[A-Z]/.test(value) &&
+      /[0-9]/.test(value) &&
+      /[^A-Za-z0-9]/.test(value);
+    if (!strongEnough) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message:
+          "Password must be at least 12 characters and include upper/lowercase letters, a number, and a symbol"
+      });
+    }
+  }
+);
 
 export const backtestQuerySchema = z
   .object({
@@ -240,10 +258,11 @@ export const webVitalsBodySchema = z.object({
 
 export const authLoginBodySchema = z.object({
   login: loginBodyValueSchema,
-  password: passwordBodyValueSchema
+  password: loginPasswordValueSchema
 });
 
 export const authRegisterBodySchema = authLoginBodySchema.extend({
+  password: registerPasswordValueSchema,
   name: optionalTrimmedString(120)
 });
 

@@ -33,12 +33,17 @@ function sendValidationError(
   label: string,
   error: z.ZodError
 ): null {
+  const issues = formatIssues(error);
+  const firstIssue = issues[0];
+  const issueDetail = firstIssue
+    ? `${firstIssue.path}: ${firstIssue.message}`
+    : `Invalid ${label}`;
   sendProblem(req, res, {
     type: "https://stockpulse.app/problems/validation-error",
     title: "Validation Error",
     status: 400,
-    detail: `Invalid ${label}`,
-    errors: formatIssues(error)
+    detail: `Invalid ${label}. ${issueDetail}`,
+    errors: issues
   });
   return null;
 }

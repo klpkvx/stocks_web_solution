@@ -4,6 +4,8 @@ import { withApiObservability } from "@/lib/apiObservability";
 import type { DashboardPayload as DashboardData } from "@/types/dashboard";
 import { parseQuery } from "@/lib/apiValidation";
 import { dashboardQuerySchema } from "@/contracts/requestContracts";
+import { canWriteResponse } from "@/lib/responseGuards";
+import { errorMessage } from "@/lib/errorMessage";
 
 type DashboardPayload = {
   quotes: DashboardData["quotes"];
@@ -14,19 +16,10 @@ type DashboardPayload = {
   updatedAt: string;
 };
 
-function canWrite(res: NextApiResponse) {
-  const socket = (res as any).socket;
-  return !res.headersSent && !res.writableEnded && !res.destroyed && !socket?.destroyed;
-}
-
 async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  if (req.method !== "GET") {
-    return res.status(405).json({ error: "Method not allowed" });
-  }
-
   const query = parseQuery(req, res, dashboardQuerySchema);
   if (!query) return;
   const symbols = query.symbols || [];
@@ -82,19 +75,21 @@ async function handler(
       "Cache-Control",
       `s-maxage=${payload.expiresIn}, stale-while-revalidate=${payload.expiresIn}`
     );
-    if (!canWrite(res)) return;
+    if (!canWriteResponse(res)) return;
     return res.status(200).json(payload);
-  } catch (error: any) {
-    if (!canWrite(res)) return;
+  } catch (error: unknown) {
+    if (!canWriteResponse(res)) return;
     return res.status(200).json({
       quotes: [],
       news: null,
       heatmap: null,
-      warnings: [error?.message || "Dashboard data unavailable"],
+      warnings: [errorMessage(error, "Dashboard data unavailable")],
       expiresIn: 30,
       updatedAt: new Date().toISOString()
     });
   }
 }
 
-export default withApiObservability("dashboard", handler);
+export default withApiObservability("dashboard", handler, {
+  methods: ["GET"]
+});

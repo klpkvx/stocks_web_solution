@@ -4,6 +4,7 @@ import { cached } from "@/lib/serverStore";
 import { withApiObservability } from "@/lib/apiObservability";
 import { parseQuery } from "@/lib/apiValidation";
 import { timeSeriesQuerySchema } from "@/contracts/requestContracts";
+import { errorMessage } from "@/lib/errorMessage";
 
 const REFRESH_MS = (() => {
   const raw = Number(process.env.SERIES_REFRESH_MS || 5 * 60 * 1000);
@@ -23,10 +24,6 @@ async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  if (req.method !== "GET") {
-    return res.status(405).json({ error: "Method not allowed" });
-  }
-
   const query = parseQuery(req, res, timeSeriesQuerySchema);
   if (!query) return;
   const symbol = query.symbol;
@@ -52,11 +49,13 @@ async function handler(
       `s-maxage=${EXPIRES_IN}, stale-while-revalidate=${EXPIRES_IN}`
     );
     return res.status(200).json({ series, expiresIn: EXPIRES_IN });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return res
       .status(500)
-      .json({ error: error?.message || "Failed to load time series" });
+      .json({ error: errorMessage(error, "Failed to load time series") });
   }
 }
 
-export default withApiObservability("time_series", handler);
+export default withApiObservability("time_series", handler, {
+  methods: ["GET"]
+});
