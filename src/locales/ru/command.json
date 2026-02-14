@@ -1,0 +1,6 @@
+{
+  "command.center": "Командный центр",
+  "command.hint": "Команды на естественном языке для быстрой навигации.",
+  "command.placeholder": "Пример: compare AAPL MSFT или open TSLA",
+  "command.run": "Запустить"
+}

@@ -1,0 +1,10 @@
+{
+  "search.addTicker": "Add ticker",
+  "search.analyze": "Analyze",
+  "search.errorLoadTickers": "Failed to load tickers.",
+  "search.go": "Go",
+  "search.loadingTickers": "Loading tickers...",
+  "search.minChars": "Type at least {n} characters for live API search.",
+  "search.noMatches": "No matches for \"{query}\".",
+  "search.ticker": "Ticker"
+}

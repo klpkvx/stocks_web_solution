@@ -1,0 +1,8 @@
+{
+  "experience.error.loadStock": "Не удалось загрузить данные выбранной акции.",
+  "experience.focusSymbol": "Фокусный тикер",
+  "experience.kicker": "Experience lab",
+  "experience.subtitle": "Дебаты, сенсорика, replay и SEC-истории.",
+  "experience.title": "Иммерсивный AI-опыт рынка",
+  "experience.watchlistFallback": "Список пуст. Используются резервные тикеры."
+}

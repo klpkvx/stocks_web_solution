@@ -1,0 +1,10 @@
+{
+  "footer.about": "О проекте",
+  "footer.blog": "Блог",
+  "footer.contact": "Контакты",
+  "footer.description": "AI-помощник по рынку с котировками в реальном времени, графиками и аналитикой портфеля.",
+  "footer.privacy": "Политика",
+  "footer.sources": "Источники данных: Twelve Data, SEC EDGAR, News API",
+  "footer.ssl": "Защищено SSL",
+  "footer.terms": "Условия"
+}

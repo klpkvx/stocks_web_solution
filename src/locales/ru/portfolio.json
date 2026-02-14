@@ -1,0 +1,19 @@
+{
+  "portfolio.addHolding": "Добавить позицию",
+  "portfolio.cashBalance": "Кэш",
+  "portfolio.costBasis": "Средняя цена",
+  "portfolio.holdings": "Позиции",
+  "portfolio.liveValue": "Текущая оценка",
+  "portfolio.noHoldings": "Пока нет позиций.",
+  "portfolio.portfolioShock": "Сценарий шока портфеля",
+  "portfolio.projectedValue": "Прогнозная стоимость:",
+  "portfolio.riskHint": "Используйте слайдер для оценки влияния шока.",
+  "portfolio.riskSimulator": "Симулятор риска",
+  "portfolio.searchSymbol": "Поиск тикера",
+  "portfolio.shares": "Акции",
+  "portfolio.shock": "Шок:",
+  "portfolio.subtitle": "Позиции, кэш и риск",
+  "portfolio.title": "Портфель",
+  "portfolio.totalPnL": "Общий P/L",
+  "portfolio.totalValue": "Общая стоимость"
+}

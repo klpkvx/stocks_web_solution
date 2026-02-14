@@ -1,0 +1,32 @@
+{
+  "components/widgets/WatchlistWidget.tsx -> @/components/TradingViewTickerTape": {
+    "id": "components/widgets/WatchlistWidget.tsx -> @/components/TradingViewTickerTape",
+    "files": [
+      "static/chunks/_pages-dir-browser_src_components_TradingViewTickerTape_tsx.js"
+    ]
+  },
+  "pages/index.tsx -> @/components/widgets/HeatmapWidget": {
+    "id": "pages/index.tsx -> @/components/widgets/HeatmapWidget",
+    "files": [
+      "static/chunks/_pages-dir-browser_src_components_widgets_HeatmapWidget_tsx.js"
+    ]
+  },
+  "pages/index.tsx -> @/components/widgets/MorningBriefWidget": {
+    "id": "pages/index.tsx -> @/components/widgets/MorningBriefWidget",
+    "files": [
+      "static/chunks/_pages-dir-browser_src_components_widgets_MorningBriefWidget_tsx.js"
+    ]
+  },
+  "pages/index.tsx -> @/components/widgets/NewsWidget": {
+    "id": "pages/index.tsx -> @/components/widgets/NewsWidget",
+    "files": [
+      "static/chunks/_pages-dir-browser_src_components_widgets_NewsWidget_tsx.js"
+    ]
+  },
+  "pages/index.tsx -> @/components/widgets/WatchlistWidget": {
+    "id": "pages/index.tsx -> @/components/widgets/WatchlistWidget",
+    "files": [
+      "static/chunks/_pages-dir-browser_src_components_widgets_WatchlistWidget_tsx.js"
+    ]
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "hero.fallback.cta": "Open dashboard",
+  "hero.fallback.description": "Live insights in a single workspace.",
+  "hero.fallback.kicker": "Pulse",
+  "hero.fallback.statLatency": "Latency",
+  "hero.fallback.statLive": "Live",
+  "hero.fallback.statWatchlist": "Watchlist",
+  "hero.fallback.title": "Market intelligence",
+  "hero.goToSlide": "Go to {title}",
+  "hero.next": "Next",
+  "hero.prev": "Prev"
+}

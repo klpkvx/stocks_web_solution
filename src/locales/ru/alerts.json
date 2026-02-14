@@ -1,0 +1,22 @@
+{
+  "alerts.activeSubtitle": "Статус правил в реальном времени",
+  "alerts.activeTitle": "Активные алерты",
+  "alerts.aiEmpty": "Пока нет AI momentum-алертов.",
+  "alerts.aiHint": "Momentum-алерты обновляются при загрузке страницы тикера.",
+  "alerts.aiSubtitle": "Пороговые алерты по AI-оценке",
+  "alerts.aiTitle": "AI momentum-алерты",
+  "alerts.condition.above": "Выше",
+  "alerts.condition.below": "Ниже",
+  "alerts.condition.percentAbove": "% выше",
+  "alerts.condition.percentBelow": "% ниже",
+  "alerts.createSubtitle": "Триггеры по цене и проценту",
+  "alerts.createTitle": "Создать алерт",
+  "alerts.empty": "Пока нет алертов.",
+  "alerts.save": "Сохранить алерт",
+  "alerts.score": "Оценка:",
+  "alerts.searchSymbol": "Поиск тикера",
+  "alerts.threshold": "Порог:",
+  "alerts.triggered": "Сработал",
+  "alerts.value": "Значение",
+  "alerts.watching": "Отслеживается"
+}

@@ -1,0 +1,10 @@
+{
+  "sec.error.load": "Failed to load SEC data.",
+  "sec.loading": "Loading SEC filings...",
+  "sec.pick": "Pick",
+  "sec.source": "Source: SEC EDGAR filings.",
+  "sec.subtitle": "Summarized SEC filings in plain language.",
+  "sec.symbolPlaceholder": "Symbol",
+  "sec.title": "SEC whisper bot",
+  "sec.whisper": "Whisper"
+}

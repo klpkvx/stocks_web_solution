@@ -1,0 +1,10 @@
+{
+  "sec.error.load": "Не удалось загрузить SEC-данные.",
+  "sec.loading": "Загрузка SEC-файлингов...",
+  "sec.pick": "Выбрать",
+  "sec.source": "Источник: SEC EDGAR.",
+  "sec.subtitle": "Краткие понятные сводки по SEC-файлингам.",
+  "sec.symbolPlaceholder": "Тикер",
+  "sec.title": "SEC whisper бот",
+  "sec.whisper": "Проанализировать"
+}

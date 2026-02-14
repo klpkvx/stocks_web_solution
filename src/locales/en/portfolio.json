@@ -1,0 +1,19 @@
+{
+  "portfolio.addHolding": "Add holding",
+  "portfolio.cashBalance": "Cash balance",
+  "portfolio.costBasis": "Cost basis",
+  "portfolio.holdings": "Holdings",
+  "portfolio.liveValue": "Live valuation",
+  "portfolio.noHoldings": "No holdings yet.",
+  "portfolio.portfolioShock": "Portfolio shock scenario",
+  "portfolio.projectedValue": "Projected value:",
+  "portfolio.riskHint": "Use the slider to estimate shock impact.",
+  "portfolio.riskSimulator": "Risk simulator",
+  "portfolio.searchSymbol": "Search symbol",
+  "portfolio.shares": "Shares",
+  "portfolio.shock": "Shock:",
+  "portfolio.subtitle": "Holdings, cash, and risk",
+  "portfolio.title": "Portfolio",
+  "portfolio.totalPnL": "Total P/L",
+  "portfolio.totalValue": "Total value"
+}

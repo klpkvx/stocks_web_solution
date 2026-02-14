@@ -1,0 +1,9 @@
+{
+  "compare.chartSubtitle": "Нормализованная динамика закрытия",
+  "compare.chartTitle": "График сравнения",
+  "compare.error.failed": "Не удалось сравнить тикеры.",
+  "compare.run": "Сравнить",
+  "compare.subtitle": "Сопоставление нормализованной динамики",
+  "compare.symbolsPlaceholder": "Тикеры (AAPL,MSFT,GOOGL)",
+  "compare.title": "Сравнение тикеров"
+}

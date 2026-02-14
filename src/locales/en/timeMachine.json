@@ -1,0 +1,15 @@
+{
+  "timeMachine.error.addHoldings": "Add holdings first to run replay.",
+  "timeMachine.error.loadHeadlines": "Failed to load historical headlines.",
+  "timeMachine.error.loadHistory": "Failed to load historical data.",
+  "timeMachine.limitNote": "For performance, replay uses up to 4 holdings.",
+  "timeMachine.loadHeadlines": "Load headlines",
+  "timeMachine.loading": "Loading historical data...",
+  "timeMachine.loadingHeadlines": "Loading headlines...",
+  "timeMachine.loadReplay": "Load replay",
+  "timeMachine.noHeadlines": "No headlines found for this date.",
+  "timeMachine.promptLoad": "Load replay to explore timeline.",
+  "timeMachine.subtitle": "Rewind portfolio performance with headlines.",
+  "timeMachine.title": "Time machine replay",
+  "timeMachine.value": "Portfolio value:"
+}

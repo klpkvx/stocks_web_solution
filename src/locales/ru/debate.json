@@ -1,0 +1,20 @@
+{
+  "debate.action.buy": "Покупка",
+  "debate.action.hold": "Держать",
+  "debate.action.sell": "Продажа",
+  "debate.actionLabel": "Действие",
+  "debate.biometric": "Биометрическая проверка",
+  "debate.biometricHint": "Симуляция уровня стресса перед рисковым действием.",
+  "debate.breathing": "Вдох 4, задержка 4, выдох 6. Повторите.",
+  "debate.cooldown": "Пауза",
+  "debate.horizon": "Горизонт",
+  "debate.horizon.long": "Долгосрок",
+  "debate.horizon.short": "Краткосрок",
+  "debate.simulate": "Проверить сделку",
+  "debate.size": "Размер позиции",
+  "debate.stress": "Стресс",
+  "debate.stressHigh": "Высокий стресс. Включена пауза на 60 секунд.",
+  "debate.stressLow": "Стресс в норме. Симуляция сделки доступна.",
+  "debate.subtitle": "Инвесторские персонажи оспаривают вашу идею.",
+  "debate.title": "AI-дебаты"
+}

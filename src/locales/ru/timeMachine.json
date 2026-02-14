@@ -1,0 +1,15 @@
+{
+  "timeMachine.error.addHoldings": "Добавьте позиции для запуска replay.",
+  "timeMachine.error.loadHeadlines": "Не удалось загрузить новости за дату.",
+  "timeMachine.error.loadHistory": "Не удалось загрузить исторические данные.",
+  "timeMachine.limitNote": "Для скорости replay использует до 4 позиций.",
+  "timeMachine.loadHeadlines": "Загрузить новости",
+  "timeMachine.loading": "Загрузка истории...",
+  "timeMachine.loadingHeadlines": "Загрузка новостей...",
+  "timeMachine.loadReplay": "Загрузить replay",
+  "timeMachine.noHeadlines": "За эту дату новости не найдены.",
+  "timeMachine.promptLoad": "Загрузите replay для просмотра временной линии.",
+  "timeMachine.subtitle": "Перемотка портфеля с историческими новостями.",
+  "timeMachine.title": "Машина времени",
+  "timeMachine.value": "Стоимость портфеля:"
+}

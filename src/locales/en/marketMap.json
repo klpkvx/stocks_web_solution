@@ -1,0 +1,6 @@
+{
+  "marketMap.empty": "Add symbols to your watchlist to populate the map.",
+  "marketMap.focus": "Focus: {sector}",
+  "marketMap.subtitle": "Sector nodes glow based on momentum.",
+  "marketMap.title": "Holographic market map"
+}

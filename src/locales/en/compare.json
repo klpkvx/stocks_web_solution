@@ -1,0 +1,9 @@
+{
+  "compare.chartSubtitle": "Normalized close performance",
+  "compare.chartTitle": "Comparison chart",
+  "compare.error.failed": "Failed to compare symbols.",
+  "compare.run": "Run comparison",
+  "compare.subtitle": "Overlay normalized performance",
+  "compare.symbolsPlaceholder": "Symbols (AAPL,MSFT,GOOGL)",
+  "compare.title": "Compare symbols"
+}

@@ -1,0 +1,15 @@
+{
+  "sensory.audioBlocked": "Звук заблокирован разрешениями браузера.",
+  "sensory.audioUnlock": "Нажмите запуск, чтобы разблокировать звук браузера.",
+  "sensory.haptics": "Тактильные сигналы",
+  "sensory.mood": "Настроение",
+  "sensory.mood.balance": "Сбалансированно",
+  "sensory.mood.drive": "Фокус и драйв",
+  "sensory.mood.steady": "Оборонительный режим",
+  "sensory.off": "Выкл",
+  "sensory.on": "Вкл",
+  "sensory.start": "Запустить режим",
+  "sensory.stop": "Остановить режим",
+  "sensory.subtitle": "Аудио и тактильные сигналы рыночной интенсивности.",
+  "sensory.title": "Сенсорный режим рынка"
+}

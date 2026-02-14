@@ -1,0 +1,12 @@
+{
+  "hero.fallback.cta": "Открыть дашборд",
+  "hero.fallback.description": "Актуальные инсайты в одном рабочем окне.",
+  "hero.fallback.kicker": "Pulse",
+  "hero.fallback.statLatency": "Задержка",
+  "hero.fallback.statLive": "Онлайн",
+  "hero.fallback.statWatchlist": "Список",
+  "hero.fallback.title": "Рыночная аналитика",
+  "hero.goToSlide": "Перейти к {title}",
+  "hero.next": "Вперед",
+  "hero.prev": "Назад"
+}

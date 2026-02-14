@@ -1,0 +1,22 @@
+{
+  "alerts.activeSubtitle": "Live rule status",
+  "alerts.activeTitle": "Active alerts",
+  "alerts.aiEmpty": "No AI momentum alerts yet.",
+  "alerts.aiHint": "Momentum alerts are updated on symbol detail loads.",
+  "alerts.aiSubtitle": "Threshold-based AI score alerts",
+  "alerts.aiTitle": "AI momentum alerts",
+  "alerts.condition.above": "Above",
+  "alerts.condition.below": "Below",
+  "alerts.condition.percentAbove": "% Above",
+  "alerts.condition.percentBelow": "% Below",
+  "alerts.createSubtitle": "Price and percent triggers",
+  "alerts.createTitle": "Create alert",
+  "alerts.empty": "No alerts yet.",
+  "alerts.save": "Save alert",
+  "alerts.score": "Score:",
+  "alerts.searchSymbol": "Search symbol",
+  "alerts.threshold": "Threshold:",
+  "alerts.triggered": "Triggered",
+  "alerts.value": "Value",
+  "alerts.watching": "Watching"
+}

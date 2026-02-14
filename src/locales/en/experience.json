@@ -1,0 +1,8 @@
+{
+  "experience.error.loadStock": "Failed to load selected stock data.",
+  "experience.focusSymbol": "Focus symbol",
+  "experience.kicker": "Experience lab",
+  "experience.subtitle": "Debate, sensory, replay, and SEC narrative tools.",
+  "experience.title": "Immersive AI market experience",
+  "experience.watchlistFallback": "Watchlist empty. Using fallback symbols."
+}

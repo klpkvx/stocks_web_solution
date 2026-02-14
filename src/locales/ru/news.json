@@ -1,0 +1,15 @@
+{
+  "news.empty": "Новости недоступны.",
+  "news.error.load": "Не удалось загрузить новости.",
+  "news.feed": "Лента новостей",
+  "news.headlines": "новости",
+  "news.loading": "Загрузка новостей...",
+  "news.marketHeadlines": "Рыночные новости",
+  "news.sentimentLabel": "{label} сентимент ({score})",
+  "news.stories.empty": "Для выбранного тикера stories не найдены.",
+  "news.stories.loading": "Загрузка stories...",
+  "news.stories.read": "Читать",
+  "news.stories.subtitle": "Новости по выбранному тикеру",
+  "news.stories.title": "Stories-лента",
+  "news.subtitle": "Свежие финансовые новости с сентиментом."
+}

@@ -1,0 +1,15 @@
+{
+  "sensory.audioBlocked": "Audio is blocked by browser permissions.",
+  "sensory.audioUnlock": "Tap start once to unlock browser audio.",
+  "sensory.haptics": "Haptics",
+  "sensory.mood": "Mood",
+  "sensory.mood.balance": "Balanced calm",
+  "sensory.mood.drive": "Focused drive",
+  "sensory.mood.steady": "Defensive steady",
+  "sensory.off": "Off",
+  "sensory.on": "On",
+  "sensory.start": "Start sensory mode",
+  "sensory.stop": "Stop sensory mode",
+  "sensory.subtitle": "Audio + haptic signals for market intensity.",
+  "sensory.title": "Sensory market mode"
+}

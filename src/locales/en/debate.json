@@ -1,0 +1,20 @@
+{
+  "debate.action.buy": "Buy",
+  "debate.action.hold": "Hold",
+  "debate.action.sell": "Sell",
+  "debate.actionLabel": "Action",
+  "debate.biometric": "Biometric validation",
+  "debate.biometricHint": "Simulated stress meter before risky actions.",
+  "debate.breathing": "Breathe in for 4, hold 4, exhale 6. Repeat.",
+  "debate.cooldown": "Cooldown",
+  "debate.horizon": "Horizon",
+  "debate.horizon.long": "Long-term",
+  "debate.horizon.short": "Short-term",
+  "debate.simulate": "Validate trade",
+  "debate.size": "Position size",
+  "debate.stress": "Stress",
+  "debate.stressHigh": "Stress is high. Cooldown activated for 60 seconds.",
+  "debate.stressLow": "Stress level acceptable. Trade simulation unlocked.",
+  "debate.subtitle": "Investor personas challenge your trade idea.",
+  "debate.title": "AI debate arena"
+}

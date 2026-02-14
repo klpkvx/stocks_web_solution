@@ -1,0 +1,10 @@
+{
+  "search.addTicker": "Добавить тикер",
+  "search.analyze": "Анализ",
+  "search.errorLoadTickers": "Не удалось загрузить тикеры.",
+  "search.go": "Открыть",
+  "search.loadingTickers": "Загрузка тикеров...",
+  "search.minChars": "Введите минимум {n} символа для поиска через API.",
+  "search.noMatches": "Ничего не найдено для \"{query}\".",
+  "search.ticker": "Тикер"
+}

@@ -1,0 +1,15 @@
+{
+  "news.empty": "No news available.",
+  "news.error.load": "Failed to load news.",
+  "news.feed": "News feed",
+  "news.headlines": "headlines",
+  "news.loading": "Loading news...",
+  "news.marketHeadlines": "Market headlines",
+  "news.sentimentLabel": "{label} sentiment ({score})",
+  "news.stories.empty": "No stories found for selected stock.",
+  "news.stories.loading": "Loading stories...",
+  "news.stories.read": "Read story",
+  "news.stories.subtitle": "Headline stories by selected stock",
+  "news.stories.title": "Stories feed",
+  "news.subtitle": "Latest financial stories with sentiment."
+}

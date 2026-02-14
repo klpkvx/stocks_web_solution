@@ -1,0 +1,45 @@
+{
+  "ci": {
+    "collect": {
+      "numberOfRuns": 1,
+      "startServerCommand": "npm run dev -- --port 3002",
+      "startServerReadyPattern": "Ready",
+      "url": [
+        "http://localhost:3002/",
+        "http://localhost:3002/stock/AAPL",
+        "http://localhost:3002/news"
+      ],
+      "settings": {
+        "preset": "desktop"
+      }
+    },
+    "assert": {
+      "assertions": {
+        "largest-contentful-paint": [
+          "warn",
+          {
+            "maxNumericValue": 2500
+          }
+        ],
+        "cumulative-layout-shift": [
+          "warn",
+          {
+            "maxNumericValue": 0.1
+          }
+        ],
+        "interactive": [
+          "warn",
+          {
+            "maxNumericValue": 3500
+          }
+        ],
+        "total-byte-weight": [
+          "warn",
+          {
+            "maxNumericValue": 900000
+          }
+        ]
+      }
+    }
+  }
+}
